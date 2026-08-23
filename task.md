@@ -1,0 +1,76 @@
+# Task Tracker — AI Cyber Attack Prediction Engine
+
+## Phase 1 — Foundation (Milestones M1.1–M1.4)
+
+### M1.1 — Project Setup
+- [x] Create directory scaffold (all folders)
+- [x] Create `README.md`
+- [x] Create `.gitignore`
+- [x] Create `requirements.txt`
+- [x] Create `ml/config.py`
+- [ ] Initialize git repository *(Manage via GitHub Desktop / Git executable)*
+
+### M1.2 — Synthetic Topology
+- [x] Create `data/synthetic/campus_topology.json` (21 devices, 30 connections, 7 segments)
+- [x] Verify topology loads correctly ✓
+
+### M1.3 — Dataset Acquisition
+- [x] Create `docs/dataset_notes.md` (download instructions, known issues, day-by-day content)
+- [x] Create `docs/target_definition.md` (temporal target definition, anti-leakage rules)
+- [x] Download CICIDS2017 dataset into `data/raw/cicids2017/` ✓
+
+### M1.4 — Data Exploration
+- [x] Dataset schema, file inspection, class distribution & version detection (`ml_only` vs `full`) ✓
+
+---
+
+## Phase 2 — Preprocessing Pipeline (M2.1–M2.5)
+- [x] M2.1 — Cleaning pipeline (`loader.py`, `cleaner.py`) ✓
+- [x] M2.2 — Encoding + scaling (`encoder.py`, `scaler.py` incorporated / handled) ✓
+- [x] M2.3 — IP-to-device mapping & synthetic enrichment (`synthetic_enrichment.py`) ✓
+- [x] M2.4 — Time windowing & Pipeline Execution on full Wednesday dataset (`pipeline.py`) ✓
+- [x] M2.5 — Target label generation (`target_generator.py`) ✓
+
+---
+
+## Phase 3 — Graph & Features (M3.1–M3.4)
+- [ ] M3.1 — Graph construction per time window (`graph/construction.py`)
+- [ ] M3.2 — Graph feature extraction (degree, betweenness, closeness, PageRank in `graph/features.py`)
+- [ ] M3.3 — Attack sequence & propagation chain extraction
+- [ ] M3.4 — Combined feature matrix generation (traffic + graph + asset features)
+
+## Phase 4 — Baseline Models (M4.1–M4.4)
+- [ ] M4.1 — Heuristic baseline model
+- [ ] M4.2 — XGBoost next-target ranking model (`ml/xgboost_model/`)
+- [ ] M4.3 — Isolation Forest anomaly detection integration (`ml/anomaly_detection/`)
+- [ ] M4.4 — Dynamic risk engine formulation (`backend/app/risk_engine/`)
+
+## Phase 5 — GNN (M5.1–M5.3)
+- [ ] M5.1 — PyTorch Geometric dataset converter (`ml/gnn/dataset.py`)
+- [ ] M5.2 — GNN model architecture (`ml/gnn/model.py`)
+- [ ] M5.3 — GNN training & evaluation vs. XGBoost baseline
+
+## Phase 6 — Explainability & Recommendations (M6.1–M6.3)
+- [ ] M6.1 — SHAP explainer integration (`ml/explainability/`)
+- [ ] M6.2 — Rule-based recommendation engine (`backend/app/recommendations/`)
+- [ ] M6.3 — Temporal model experimentation (optional/advanced)
+
+## Phase 7 — Backend (M7.1–M7.4)
+- [ ] M7.1 — FastAPI app scaffolding
+- [ ] M7.2 — Network, Risk, & Prediction API endpoints
+- [ ] M7.3 — Analysis trigger endpoint
+- [ ] M7.4 — Explanation & Recommendation endpoints
+
+## Phase 8 — Frontend Dashboard (M8.1–M8.5)
+- [ ] M8.1 — React + Tailwind CSS scaffold
+- [ ] M8.2 — Cytoscape.js Network Graph visualization
+- [ ] M8.3 — Ranked prediction list & dynamic risk dashboard
+- [ ] M8.4 — SHAP explanation panel & defensive actions cards
+- [ ] M8.5 — Attack propagation path animation
+
+## Phase 9 — Integration & Evaluation (M9.1–M9.5)
+- [ ] M9.1 — End-to-end pipeline & UI integration
+- [ ] M9.2 — Comprehensive ablation study
+- [ ] M9.3 — Early-warning time evaluation
+- [ ] M9.4 — Multi-dataset generalization test
+- [ ] M9.5 — Final technical report, paper, & presentation

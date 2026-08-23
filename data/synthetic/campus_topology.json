@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "name": "VIT Campus Network — Simulated Topology",
+    "description": "Synthetic university/campus network for AI Cyber Attack Prediction Engine. Represents a medium-sized campus with student, faculty, and admin VLANs, core infrastructure, and servers.",
+    "version": "1.0",
+    "created_for": "research_prototype",
+    "note": "All criticality and vulnerability values are synthetic/assigned for demonstration. They do NOT represent real-world assessments."
+  },
+  "network": {
+    "name": "VIT Campus Network",
+    "segments": [
+      {"id": "internet", "name": "Internet/External", "type": "external"},
+      {"id": "dmz", "name": "DMZ", "type": "dmz"},
+      {"id": "core", "name": "Core Network", "type": "core"},
+      {"id": "student_vlan", "name": "Student VLAN", "type": "endpoint_vlan"},
+      {"id": "faculty_vlan", "name": "Faculty VLAN", "type": "endpoint_vlan"},
+      {"id": "admin_vlan", "name": "Admin VLAN", "type": "endpoint_vlan"},
+      {"id": "server_vlan", "name": "Server VLAN", "type": "server_vlan"}
+    ]
+  },
+  "devices": [
+    {
+      "id": "FIREWALL-01",
+      "name": "Campus Firewall",
+      "type": "firewall",
+      "department": "IT Infrastructure",
+      "vlan": "core",
+      "os": "FortiOS",
+      "criticality": 0.98,
+      "vulnerability": 0.10,
+      "open_ports": [443, 22],
+      "description": "Primary perimeter firewall"
+    },
+    {
+      "id": "ROUTER-01",
+      "name": "Core Router",
+      "type": "router",
+      "department": "IT Infrastructure",
+      "vlan": "core",
+      "os": "Cisco IOS",
+      "criticality": 0.95,
+      "vulnerability": 0.12,
+      "open_ports": [22, 161],
+      "description": "Main campus core router"
+    },
+    {
+      "id": "SWITCH-01",
+      "name": "Distribution Switch — Student",
+      "type": "switch",
+      "department": "IT Infrastructure",
+      "vlan": "student_vlan",
+      "os": "Cisco IOS",
+      "criticality": 0.60,
+      "vulnerability": 0.15,
+      "open_ports": [22, 161],
+      "description": "Student VLAN distribution switch"
+    },
+    {
+      "id": "SWITCH-02",
+      "name": "Distribution Switch — Faculty",
+      "type": "switch",
+      "department": "IT Infrastructure",
+      "vlan": "faculty_vlan",
+      "os": "Cisco IOS",
+      "criticality": 0.65,
+      "vulnerability": 0.15,
+      "open_ports": [22, 161],
+      "description": "Faculty VLAN distribution switch"
+    },
+    {
+      "id": "SWITCH-03",
+      "name": "Distribution Switch — Admin",
+      "type": "switch",
+      "department": "IT Infrastructure",
+      "vlan": "admin_vlan",
+      "os": "Cisco IOS",
+      "criticality": 0.75,
+      "vulnerability": 0.12,
+      "open_ports": [22, 161],
+      "description": "Admin VLAN distribution switch"
+    },
+    {
+      "id": "PC-01",
+      "name": "Student Lab PC 1",
+      "type": "workstation",
+      "department": "Student Lab",
+      "vlan": "student_vlan",
+      "os": "Windows 10",
+      "criticality": 0.15,
+      "vulnerability": 0.55,
+      "open_ports": [135, 139, 445, 3389],
+      "description": "General-purpose student workstation"
+    },
+    {
+      "id": "PC-02",
+      "name": "Student Lab PC 2",
+      "type": "workstation",
+      "department": "Student Lab",
+      "vlan": "student_vlan",
+      "os": "Windows 10",
+      "criticality": 0.15,
+      "vulnerability": 0.50,
+      "open_ports": [135, 139, 445, 3389],
+      "description": "General-purpose student workstation"
+    },
+    {
+      "id": "PC-03",
+      "name": "Student Lab PC 3",
+      "type": "workstation",
+      "department": "Student Lab",
+      "vlan": "student_vlan",
+      "os": "Windows 10",
+      "criticality": 0.15,
+      "vulnerability": 0.60,
+      "open_ports": [135, 139, 445, 3389],
+      "description": "Student workstation — unpatched"
+    },
+    {
+      "id": "PC-04",
+      "name": "Student WiFi Laptop",
+      "type": "laptop",
+      "department": "Student",
+      "vlan": "student_vlan",
+      "os": "Windows 11",
+      "criticality": 0.10,
+      "vulnerability": 0.45,
+      "open_ports": [135, 445],
+      "description": "Student personal laptop on campus WiFi"
+    },
+    {
+      "id": "PC-05",
+      "name": "Faculty Office PC 1",
+      "type": "workstation",
+      "department": "Faculty — CS Dept",
+      "vlan": "faculty_vlan",
+      "os": "Windows 10",
+      "criticality": 0.40,
+      "vulnerability": 0.35,
+      "open_ports": [135, 139, 445],
+      "description": "Faculty member workstation"
+    },
+    {
+      "id": "PC-06",
+      "name": "Faculty Office PC 2",
+      "type": "workstation",
+      "department": "Faculty — CS Dept",
+      "vlan": "faculty_vlan",
+      "os": "Ubuntu 22.04",
+      "criticality": 0.40,
+      "vulnerability": 0.25,
+      "open_ports": [22, 80],
+      "description": "Faculty research workstation — Linux"
+    },
+    {
+      "id": "PC-07",
+      "name": "Faculty Office PC 3",
+      "type": "workstation",
+      "department": "Faculty — EE Dept",
+      "vlan": "faculty_vlan",
+      "os": "Windows 10",
+      "criticality": 0.35,
+      "vulnerability": 0.40,
+      "open_ports": [135, 139, 445],
+      "description": "Faculty workstation"
+    },
+    {
+      "id": "PC-08",
+      "name": "Admin Workstation 1",
+      "type": "workstation",
+      "department": "Administration",
+      "vlan": "admin_vlan",
+      "os": "Windows 10",
+      "criticality": 0.55,
+      "vulnerability": 0.30,
+      "open_ports": [135, 139, 445],
+      "description": "Admin staff workstation — access to student records"
+    },
+    {
+      "id": "PC-09",
+      "name": "Admin Workstation 2",
+      "type": "workstation",
+      "department": "Administration",
+      "vlan": "admin_vlan",
+      "os": "Windows 10",
+      "criticality": 0.55,
+      "vulnerability": 0.30,
+      "open_ports": [135, 139, 445],
+      "description": "Admin staff workstation — HR data access"
+    },
+    {
+      "id": "PC-10",
+      "name": "Finance Workstation",
+      "type": "workstation",
+      "department": "Finance",
+      "vlan": "admin_vlan",
+      "os": "Windows 10",
+      "criticality": 0.70,
+      "vulnerability": 0.25,
+      "open_ports": [135, 139, 445],
+      "description": "Finance department — handles payment data"
+    },
+    {
+      "id": "FILE-SERVER-01",
+      "name": "Central File Server",
+      "type": "server",
+      "department": "IT Infrastructure",
+      "vlan": "server_vlan",
+      "os": "Windows Server 2019",
+      "criticality": 0.90,
+      "vulnerability": 0.35,
+      "open_ports": [139, 445, 3389, 22],
+      "description": "Shared file storage — accessed by all departments"
+    },
+    {
+      "id": "DB-SERVER-01",
+      "name": "Student Records Database",
+      "type": "server",
+      "department": "IT Infrastructure",
+      "vlan": "server_vlan",
+      "os": "Ubuntu 22.04",
+      "criticality": 0.95,
+      "vulnerability": 0.28,
+      "open_ports": [5432, 22],
+      "description": "PostgreSQL — student records, grades, personal data"
+    },
+    {
+      "id": "WEB-SERVER-01",
+      "name": "Campus Web Portal",
+      "type": "server",
+      "department": "IT Infrastructure",
+      "vlan": "dmz",
+      "os": "Ubuntu 22.04",
+      "criticality": 0.75,
+      "vulnerability": 0.40,
+      "open_ports": [80, 443, 22],
+      "description": "Public-facing campus website and student portal"
+    },
+    {
+      "id": "MAIL-SERVER-01",
+      "name": "Email Server",
+      "type": "server",
+      "department": "IT Infrastructure",
+      "vlan": "server_vlan",
+      "os": "Ubuntu 22.04",
+      "criticality": 0.80,
+      "vulnerability": 0.30,
+      "open_ports": [25, 143, 993, 587, 22],
+      "description": "Campus email server"
+    },
+    {
+      "id": "DNS-SERVER-01",
+      "name": "Internal DNS Server",
+      "type": "server",
+      "department": "IT Infrastructure",
+      "vlan": "core",
+      "os": "Ubuntu 22.04",
+      "criticality": 0.85,
+      "vulnerability": 0.18,
+      "open_ports": [53, 22],
+      "description": "Internal DNS resolver"
+    },
+    {
+      "id": "WIFI-AP-01",
+      "name": "WiFi Access Point — Library",
+      "type": "access_point",
+      "department": "Library",
+      "vlan": "student_vlan",
+      "os": "Embedded",
+      "criticality": 0.30,
+      "vulnerability": 0.50,
+      "open_ports": [],
+      "description": "Library wireless access point"
+    }
+  ],
+  "connections": [
+    {"from": "FIREWALL-01", "to": "ROUTER-01", "type": "trunk", "bandwidth": "10Gbps"},
+    {"from": "ROUTER-01", "to": "SWITCH-01", "type": "trunk", "bandwidth": "1Gbps"},
+    {"from": "ROUTER-01", "to": "SWITCH-02", "type": "trunk", "bandwidth": "1Gbps"},
+    {"from": "ROUTER-01", "to": "SWITCH-03", "type": "trunk", "bandwidth": "1Gbps"},
+    {"from": "ROUTER-01", "to": "WEB-SERVER-01", "type": "direct", "bandwidth": "1Gbps"},
+    {"from": "ROUTER-01", "to": "DNS-SERVER-01", "type": "direct", "bandwidth": "1Gbps"},
+
+    {"from": "SWITCH-01", "to": "PC-01", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-01", "to": "PC-02", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-01", "to": "PC-03", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-01", "to": "WIFI-AP-01", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "WIFI-AP-01", "to": "PC-04", "type": "wireless", "bandwidth": "300Mbps"},
+
+    {"from": "SWITCH-02", "to": "PC-05", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-02", "to": "PC-06", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-02", "to": "PC-07", "type": "access", "bandwidth": "1Gbps"},
+
+    {"from": "SWITCH-03", "to": "PC-08", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-03", "to": "PC-09", "type": "access", "bandwidth": "1Gbps"},
+    {"from": "SWITCH-03", "to": "PC-10", "type": "access", "bandwidth": "1Gbps"},
+
+    {"from": "ROUTER-01", "to": "FILE-SERVER-01", "type": "direct", "bandwidth": "10Gbps"},
+    {"from": "ROUTER-01", "to": "DB-SERVER-01", "type": "direct", "bandwidth": "10Gbps"},
+    {"from": "ROUTER-01", "to": "MAIL-SERVER-01", "type": "direct", "bandwidth": "1Gbps"},
+
+    {"from": "PC-01", "to": "FILE-SERVER-01", "type": "smb", "bandwidth": "1Gbps"},
+    {"from": "PC-02", "to": "FILE-SERVER-01", "type": "smb", "bandwidth": "1Gbps"},
+    {"from": "PC-05", "to": "FILE-SERVER-01", "type": "smb", "bandwidth": "1Gbps"},
+    {"from": "PC-06", "to": "FILE-SERVER-01", "type": "ssh", "bandwidth": "1Gbps"},
+    {"from": "PC-08", "to": "FILE-SERVER-01", "type": "smb", "bandwidth": "1Gbps"},
+    {"from": "PC-08", "to": "DB-SERVER-01", "type": "postgresql", "bandwidth": "1Gbps"},
+    {"from": "PC-09", "to": "DB-SERVER-01", "type": "postgresql", "bandwidth": "1Gbps"},
+    {"from": "PC-10", "to": "DB-SERVER-01", "type": "postgresql", "bandwidth": "1Gbps"},
+
+    {"from": "FILE-SERVER-01", "to": "DB-SERVER-01", "type": "internal", "bandwidth": "10Gbps"},
+    {"from": "WEB-SERVER-01", "to": "DB-SERVER-01", "type": "postgresql", "bandwidth": "1Gbps"}
+  ],
+  "ip_mapping": {
+    "_note": "Maps CICIDS2017 IPs to campus device IDs. Updated during preprocessing when actual dataset IPs are known.",
+    "placeholder_ranges": {
+      "192.168.10.0/24": "student_vlan",
+      "192.168.20.0/24": "faculty_vlan",
+      "192.168.30.0/24": "admin_vlan",
+      "10.0.0.0/24": "server_vlan",
+      "172.16.0.0/24": "core"
+    }
+  }
+}

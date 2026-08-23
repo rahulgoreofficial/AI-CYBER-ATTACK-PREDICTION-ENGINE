@@ -1,0 +1,72 @@
+# ==============================================================================
+# AI Cyber Attack Prediction Engine — .gitignore
+# ==============================================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ---- Virtual Environment ----
+venv/
+env/
+.venv/
+.env
+
+# ---- Data (large files — download separately) ----
+data/raw/
+data/processed/*.csv
+data/processed/*.parquet
+
+# ---- Trained Models (large binaries) ----
+models/*.pkl
+models/*.pt
+models/*.pth
+models/*.joblib
+models/*.xgb
+
+# ---- Experiment Outputs ----
+experiments/runs/
+experiments/*.log
+
+# ---- Jupyter Notebooks ----
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---- IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Node.js (frontend) ----
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# ---- Environment Variables ----
+.env
+.env.local
+.env.production
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Misc ----
+*.bak
+*.tmp
+*.temp
