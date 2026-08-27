@@ -1,0 +1,499 @@
+{
+  "day": "wednesday",
+  "num_samples": 1649,
+  "num_features": 120,
+  "global_feature_importance": [
+    {
+      "rank": 1,
+      "feature": "vlan_dmz",
+      "mean_abs_shap": 3.30349946
+    },
+    {
+      "rank": 2,
+      "feature": "dst_total_fwd_packets_sum",
+      "mean_abs_shap": 0.50399983
+    },
+    {
+      "rank": 3,
+      "feature": "dst_fwd_pkt_len_mean_sum",
+      "mean_abs_shap": 0.25101575
+    },
+    {
+      "rank": 4,
+      "feature": "dst_flow_duration_count",
+      "mean_abs_shap": 0.24078974
+    },
+    {
+      "rank": 5,
+      "feature": "dst_fwd_iat_mean_sum",
+      "mean_abs_shap": 0.22313528
+    },
+    {
+      "rank": 6,
+      "feature": "dst_attack_count",
+      "mean_abs_shap": 0.19096981
+    },
+    {
+      "rank": 7,
+      "feature": "dst_fwd_iat_mean_mean",
+      "mean_abs_shap": 0.18261217
+    },
+    {
+      "rank": 8,
+      "feature": "dst_pkt_len_std_sum",
+      "mean_abs_shap": 0.17322673
+    },
+    {
+      "rank": 9,
+      "feature": "dst_ack_flag_cnt_sum",
+      "mean_abs_shap": 0.16120966
+    },
+    {
+      "rank": 10,
+      "feature": "dst_flow_duration_sum",
+      "mean_abs_shap": 0.14787291
+    },
+    {
+      "rank": 11,
+      "feature": "dst_flow_bytes_per_s_mean",
+      "mean_abs_shap": 0.13913326
+    },
+    {
+      "rank": 12,
+      "feature": "src_flow_count",
+      "mean_abs_shap": 0.13158277
+    },
+    {
+      "rank": 13,
+      "feature": "is_currently_attacked",
+      "mean_abs_shap": 0.11626168
+    },
+    {
+      "rank": 14,
+      "feature": "dst_flow_bytes_per_s_sum",
+      "mean_abs_shap": 0.09467468
+    },
+    {
+      "rank": 15,
+      "feature": "dst_flow_iat_mean_sum",
+      "mean_abs_shap": 0.09074879
+    },
+    {
+      "rank": 16,
+      "feature": "dst_init_win_bytes_bwd_sum",
+      "mean_abs_shap": 0.08496511
+    },
+    {
+      "rank": 17,
+      "feature": "dst_flow_packets_per_s_sum",
+      "mean_abs_shap": 0.08334426
+    },
+    {
+      "rank": 18,
+      "feature": "dst_bwd_iat_mean_sum",
+      "mean_abs_shap": 0.05944165
+    },
+    {
+      "rank": 19,
+      "feature": "dst_avg_pkt_size_mean",
+      "mean_abs_shap": 0.04412677
+    },
+    {
+      "rank": 20,
+      "feature": "dst_avg_pkt_size_sum",
+      "mean_abs_shap": 0.04160483
+    }
+  ],
+  "sample_explanations": [
+    {
+      "device_id": "WEB-SERVER-01",
+      "window_id": 0,
+      "attack_probability": 0.977996,
+      "base_value": 0.298781,
+      "top_features": [
+        {
+          "name": "vlan_dmz",
+          "value": 1.0,
+          "shap_value": 2.767124,
+          "direction": "increases_risk",
+          "contribution_pct": 45.14
+        },
+        {
+          "name": "src_flow_count",
+          "value": 612.0,
+          "shap_value": -0.439447,
+          "direction": "decreases_risk",
+          "contribution_pct": 7.17
+        },
+        {
+          "name": "dst_total_fwd_packets_sum",
+          "value": 184466.0,
+          "shap_value": 0.431573,
+          "direction": "increases_risk",
+          "contribution_pct": 7.04
+        },
+        {
+          "name": "dst_flow_duration_count",
+          "value": 599.0,
+          "shap_value": -0.227669,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.71
+        },
+        {
+          "name": "dst_flow_bytes_per_s_sum",
+          "value": 1826536563.708942,
+          "shap_value": -0.21976,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.59
+        },
+        {
+          "name": "dst_fwd_iat_mean_sum",
+          "value": 3225720470.981668,
+          "shap_value": 0.2194,
+          "direction": "increases_risk",
+          "contribution_pct": 3.58
+        },
+        {
+          "name": "dst_attack_count",
+          "value": 1.0,
+          "shap_value": 0.211126,
+          "direction": "increases_risk",
+          "contribution_pct": 3.44
+        },
+        {
+          "name": "dst_fwd_iat_mean_mean",
+          "value": 5385176.078434,
+          "shap_value": 0.207736,
+          "direction": "increases_risk",
+          "contribution_pct": 3.39
+        },
+        {
+          "name": "dst_flow_bytes_per_s_mean",
+          "value": 3049309.789164,
+          "shap_value": -0.20665,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.37
+        },
+        {
+          "name": "dst_ack_flag_cnt_sum",
+          "value": 229.0,
+          "shap_value": 0.196643,
+          "direction": "increases_risk",
+          "contribution_pct": 3.21
+        }
+      ]
+    },
+    {
+      "device_id": "WEB-SERVER-01",
+      "window_id": 1,
+      "attack_probability": 0.955515,
+      "base_value": 0.298781,
+      "top_features": [
+        {
+          "name": "vlan_dmz",
+          "value": 1.0,
+          "shap_value": 2.727411,
+          "direction": "increases_risk",
+          "contribution_pct": 41.55
+        },
+        {
+          "name": "src_flow_count",
+          "value": 618.0,
+          "shap_value": -0.483092,
+          "direction": "decreases_risk",
+          "contribution_pct": 7.36
+        },
+        {
+          "name": "dst_total_fwd_packets_sum",
+          "value": 168075.0,
+          "shap_value": 0.43452,
+          "direction": "increases_risk",
+          "contribution_pct": 6.62
+        },
+        {
+          "name": "dst_flow_bytes_per_s_mean",
+          "value": 4555743.841268,
+          "shap_value": -0.231512,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.53
+        },
+        {
+          "name": "dst_fwd_iat_mean_mean",
+          "value": 4779497.9858,
+          "shap_value": 0.231406,
+          "direction": "increases_risk",
+          "contribution_pct": 3.53
+        },
+        {
+          "name": "dst_fwd_pkt_len_mean_sum",
+          "value": 42863.534373,
+          "shap_value": 0.224299,
+          "direction": "increases_risk",
+          "contribution_pct": 3.42
+        },
+        {
+          "name": "dst_flow_bytes_per_s_sum",
+          "value": 2633219940.253189,
+          "shap_value": -0.223445,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.4
+        },
+        {
+          "name": "dst_fwd_iat_mean_sum",
+          "value": 2762549835.792289,
+          "shap_value": 0.2194,
+          "direction": "increases_risk",
+          "contribution_pct": 3.34
+        },
+        {
+          "name": "dst_ack_flag_cnt_sum",
+          "value": 136.0,
+          "shap_value": -0.163306,
+          "direction": "decreases_risk",
+          "contribution_pct": 2.49
+        },
+        {
+          "name": "dst_flow_duration_sum",
+          "value": 15120676427.0,
+          "shap_value": 0.150936,
+          "direction": "increases_risk",
+          "contribution_pct": 2.3
+        }
+      ]
+    },
+    {
+      "device_id": "WEB-SERVER-01",
+      "window_id": 2,
+      "attack_probability": 0.966775,
+      "base_value": 0.298781,
+      "top_features": [
+        {
+          "name": "vlan_dmz",
+          "value": 1.0,
+          "shap_value": 2.837133,
+          "direction": "increases_risk",
+          "contribution_pct": 45.73
+        },
+        {
+          "name": "dst_total_fwd_packets_sum",
+          "value": 4916.0,
+          "shap_value": -0.364943,
+          "direction": "decreases_risk",
+          "contribution_pct": 5.88
+        },
+        {
+          "name": "dst_fwd_iat_mean_mean",
+          "value": 4606608.851204,
+          "shap_value": 0.249697,
+          "direction": "increases_risk",
+          "contribution_pct": 4.02
+        },
+        {
+          "name": "dst_fwd_iat_mean_sum",
+          "value": 2722505831.061657,
+          "shap_value": 0.246357,
+          "direction": "increases_risk",
+          "contribution_pct": 3.97
+        },
+        {
+          "name": "dst_flow_bytes_per_s_sum",
+          "value": 3594402119.179535,
+          "shap_value": -0.24485,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.95
+        },
+        {
+          "name": "dst_flow_bytes_per_s_mean",
+          "value": 6081898.678815,
+          "shap_value": -0.231512,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.73
+        },
+        {
+          "name": "dst_fwd_pkt_len_mean_sum",
+          "value": 40621.315922,
+          "shap_value": 0.224299,
+          "direction": "increases_risk",
+          "contribution_pct": 3.62
+        },
+        {
+          "name": "dst_flow_duration_sum",
+          "value": 12167412472.0,
+          "shap_value": 0.204789,
+          "direction": "increases_risk",
+          "contribution_pct": 3.3
+        },
+        {
+          "name": "dst_flow_iat_mean_sum",
+          "value": 1062739933.284923,
+          "shap_value": 0.156006,
+          "direction": "increases_risk",
+          "contribution_pct": 2.51
+        },
+        {
+          "name": "dst_flow_duration_count",
+          "value": 591.0,
+          "shap_value": -0.1359,
+          "direction": "decreases_risk",
+          "contribution_pct": 2.19
+        }
+      ]
+    },
+    {
+      "device_id": "WEB-SERVER-01",
+      "window_id": 3,
+      "attack_probability": 0.986397,
+      "base_value": 0.298781,
+      "top_features": [
+        {
+          "name": "vlan_dmz",
+          "value": 1.0,
+          "shap_value": 2.876272,
+          "direction": "increases_risk",
+          "contribution_pct": 50.12
+        },
+        {
+          "name": "dst_flow_duration_count",
+          "value": 814.0,
+          "shap_value": 0.259867,
+          "direction": "increases_risk",
+          "contribution_pct": 4.53
+        },
+        {
+          "name": "dst_flow_bytes_per_s_mean",
+          "value": 4210184.737794,
+          "shap_value": -0.231512,
+          "direction": "decreases_risk",
+          "contribution_pct": 4.03
+        },
+        {
+          "name": "dst_flow_bytes_per_s_sum",
+          "value": 3427090376.564457,
+          "shap_value": -0.21976,
+          "direction": "decreases_risk",
+          "contribution_pct": 3.83
+        },
+        {
+          "name": "dst_fwd_iat_mean_sum",
+          "value": 2973109630.697425,
+          "shap_value": 0.2194,
+          "direction": "increases_risk",
+          "contribution_pct": 3.82
+        },
+        {
+          "name": "dst_fwd_iat_mean_mean",
+          "value": 3652468.833781,
+          "shap_value": 0.193796,
+          "direction": "increases_risk",
+          "contribution_pct": 3.38
+        },
+        {
+          "name": "dst_total_fwd_packets_sum",
+          "value": 10188.0,
+          "shap_value": 0.176418,
+          "direction": "increases_risk",
+          "contribution_pct": 3.07
+        },
+        {
+          "name": "dst_attack_count",
+          "value": 239.0,
+          "shap_value": 0.170596,
+          "direction": "increases_risk",
+          "contribution_pct": 2.97
+        },
+        {
+          "name": "dst_ack_flag_cnt_sum",
+          "value": 150.0,
+          "shap_value": -0.16597,
+          "direction": "decreases_risk",
+          "contribution_pct": 2.89
+        },
+        {
+          "name": "dst_fwd_pkt_len_mean_sum",
+          "value": 52148.797365,
+          "shap_value": 0.130554,
+          "direction": "increases_risk",
+          "contribution_pct": 2.27
+        }
+      ]
+    },
+    {
+      "device_id": "WEB-SERVER-01",
+      "window_id": 4,
+      "attack_probability": 0.993242,
+      "base_value": 0.298781,
+      "top_features": [
+        {
+          "name": "vlan_dmz",
+          "value": 1.0,
+          "shap_value": 2.928317,
+          "direction": "increases_risk",
+          "contribution_pct": 52.28
+        },
+        {
+          "name": "dst_fwd_iat_mean_sum",
+          "value": 9801560646.27646,
+          "shap_value": 0.297973,
+          "direction": "increases_risk",
+          "contribution_pct": 5.32
+        },
+        {
+          "name": "dst_flow_duration_count",
+          "value": 1401.0,
+          "shap_value": 0.267433,
+          "direction": "increases_risk",
+          "contribution_pct": 4.77
+        },
+        {
+          "name": "dst_fwd_iat_mean_mean",
+          "value": 6996117.52054,
+          "shap_value": 0.196544,
+          "direction": "increases_risk",
+          "contribution_pct": 3.51
+        },
+        {
+          "name": "dst_fwd_pkt_len_mean_sum",
+          "value": 82629.229929,
+          "shap_value": 0.195607,
+          "direction": "increases_risk",
+          "contribution_pct": 3.49
+        },
+        {
+          "name": "dst_flow_bytes_per_s_mean",
+          "value": 454392.144179,
+          "shap_value": 0.159412,
+          "direction": "increases_risk",
+          "contribution_pct": 2.85
+        },
+        {
+          "name": "dst_flow_bytes_per_s_sum",
+          "value": 636603393.995325,
+          "shap_value": 0.152312,
+          "direction": "increases_risk",
+          "contribution_pct": 2.72
+        },
+        {
+          "name": "dst_attack_count",
+          "value": 877.0,
+          "shap_value": 0.144772,
+          "direction": "increases_risk",
+          "contribution_pct": 2.58
+        },
+        {
+          "name": "dst_ack_flag_cnt_sum",
+          "value": 193.0,
+          "shap_value": -0.142974,
+          "direction": "decreases_risk",
+          "contribution_pct": 2.55
+        },
+        {
+          "name": "src_flow_count",
+          "value": 526.0,
+          "shap_value": 0.12414,
+          "direction": "increases_risk",
+          "contribution_pct": 2.22
+        }
+      ]
+    }
+  ]
+}

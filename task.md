@@ -60,9 +60,9 @@
 
 ## Phase 6 — Explainability & Recommendations (M6.1–M6.3)
 
-- [ ] M6.1 — SHAP explainer integration (`ml/explainability/`)
-- [ ] M6.2 — Rule-based recommendation engine (`backend/app/recommendations/`)
-- [ ] M6.3 — Temporal model experimentation (optional/advanced)
+- [x] M6.1 — SHAP explainer integration (`ml/explainability/shap_explainer.py`, `local_explanations.py`) — TreeExplainer for XGBoost, global feature importance (vlan_dmz, dst_total_fwd_packets_sum #1 & #2), per-prediction contribution breakdowns, saved to `experiments/shap_analysis_wednesday.json` & `local_explanations_wednesday.json` ✓
+- [x] M6.2 — Rule-based recommendation engine (`backend/app/recommendations/engine.py`) — 10 prioritized rules across 7 categories (incident response, isolation, access control, monitoring, patching, micro-segmentation, data protection) with unit tests passing ✓
+- [x] M6.3 — Temporal model experimentation (`ml/temporal/temporal_lstm.py`) — Lookback sequence dataset (1,615 sequences), 1-layer LSTM (47,681 params), Top-1=0.57, Top-3=0.86, MRR=0.71, PR-AUC=0.59, ROC-AUC=0.92, model saved to `models/temporal_lstm.pt` ✓
 
 ## Phase 7 — Backend (M7.1–M7.4)
 

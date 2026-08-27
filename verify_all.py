@@ -16,7 +16,7 @@ assert df_fm[feature_cols].isna().sum().sum() == 0, f"Found NaNs in {len(feature
 print(f"Verified: All {len(feature_cols)} feature columns have 0 NaNs.")
 
 # 2. Check models
-for m in ["xgboost_baseline.pkl", "isolation_forest.pkl", "xgboost_with_if.pkl", "gnn_model.pt"]:
+for m in ["xgboost_baseline.pkl", "isolation_forest.pkl", "xgboost_with_if.pkl", "gnn_model.pt", "temporal_lstm.pt"]:
     p = PATHS["models"] / m
     assert p.exists(), f"Model {m} missing"
     print(f"Model found: {m} ({p.stat().st_size / 1024:.1f} KB)")
@@ -26,6 +26,10 @@ comp_path = PATHS["experiments"] / "model_comparison_wednesday.json"
 assert comp_path.exists(), "Model comparison missing"
 with open(comp_path) as f:
     comp = json.load(f)
+
+shap_path = PATHS["experiments"] / "shap_analysis_wednesday.json"
+assert shap_path.exists(), "SHAP analysis missing"
+print(f"SHAP analysis found: {shap_path.name}")
 
 print(f"\nExperiment results logged: {len(comp)} models evaluated")
 for c in comp:
