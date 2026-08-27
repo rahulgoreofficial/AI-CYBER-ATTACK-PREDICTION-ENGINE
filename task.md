@@ -8,7 +8,7 @@
 - [x] Create `.gitignore`
 - [x] Create `requirements.txt`
 - [x] Create `ml/config.py`
-- [ ] Initialize git repository *(Manage via GitHub Desktop / Git executable)*
+- [x] Initialize git repository ✓
 
 ### M1.2 — Synthetic Topology
 - [x] Create `data/synthetic/campus_topology.json` (21 devices, 30 connections, 7 segments)
@@ -34,16 +34,16 @@
 ---
 
 ## Phase 3 — Graph & Features (M3.1–M3.4)
-- [ ] M3.1 — Graph construction per time window (`graph/construction.py`)
-- [ ] M3.2 — Graph feature extraction (degree, betweenness, closeness, PageRank in `graph/features.py`)
-- [ ] M3.3 — Attack sequence & propagation chain extraction
-- [ ] M3.4 — Combined feature matrix generation (traffic + graph + asset features)
+- [x] M3.1 — Graph construction per time window (`graph/construction.py`) — 97 graphs, avg 24.6 nodes, 149.5 edges ✓
+- [x] M3.2 — Graph feature extraction (degree, betweenness, closeness, PageRank in `graph/features.py`) — 12 features, 2,388 rows ✓
+- [x] M3.3 — Attack sequence & propagation chain extraction (`graph/attack_chains.py`) — 0 chains (Wed attacks are single-hop DoS) ✓
+- [x] M3.4 — Combined feature matrix generation (`ml/feature_engineering/feature_combiner.py`) — 1,649 samples × 120 features, saved to CSV ✓
 
-## Phase 4 — Baseline Models (M4.1–M4.4)
-- [ ] M4.1 — Heuristic baseline model
-- [ ] M4.2 — XGBoost next-target ranking model (`ml/xgboost_model/`)
-- [ ] M4.3 — Isolation Forest anomaly detection integration (`ml/anomaly_detection/`)
-- [ ] M4.4 — Dynamic risk engine formulation (`backend/app/risk_engine/`)
+## Phase 4 -- Baseline Models (M4.1--M4.4)
+- [x] M4.1 -- Heuristic baseline model (degree x criticality x neighbor_attacks) -- Top-1=1.0, F1=0.40
+- [x] M4.2 -- XGBoost next-target ranking model -- Top-1=1.0, F1=0.97, PR-AUC=1.0
+- [x] M4.3 -- Isolation Forest anomaly detection + XGBoost -- anomaly_score_if ranked 3rd most important feature
+- [x] M4.4 -- Dynamic risk engine formulation -- F1=1.0, risk rankings show WEB-SERVER-01 consistently #1
 
 ## Phase 5 — GNN (M5.1–M5.3)
 - [ ] M5.1 — PyTorch Geometric dataset converter (`ml/gnn/dataset.py`)
