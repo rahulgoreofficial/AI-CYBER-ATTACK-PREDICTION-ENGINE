@@ -16,7 +16,7 @@ assert df_fm[feature_cols].isna().sum().sum() == 0, f"Found NaNs in {len(feature
 print(f"Verified: All {len(feature_cols)} feature columns have 0 NaNs.")
 
 # 2. Check models
-for m in ["xgboost_baseline.pkl", "isolation_forest.pkl", "xgboost_with_if.pkl"]:
+for m in ["xgboost_baseline.pkl", "isolation_forest.pkl", "xgboost_with_if.pkl", "gnn_model.pt"]:
     p = PATHS["models"] / m
     assert p.exists(), f"Model {m} missing"
     print(f"Model found: {m} ({p.stat().st_size / 1024:.1f} KB)")

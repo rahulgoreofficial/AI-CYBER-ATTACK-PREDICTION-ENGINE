@@ -54,9 +54,9 @@
 
 ## Phase 5 — GNN (M5.1–M5.3)
 
-- [ ] M5.1 — PyTorch Geometric dataset converter (`ml/gnn/dataset.py`)
-- [ ] M5.2 — GNN model architecture (`ml/gnn/model.py`)
-- [ ] M5.3 — GNN training & evaluation vs. XGBoost baseline
+- [x] M5.1 — PyTorch Geometric dataset converter (`ml/gnn/dataset.py`) — 97 graphs, 22 nodes avg, 120 features, 4 edge features ✓
+- [x] M5.2 — GNN model architecture (`ml/gnn/model.py`) — 2-layer GraphSAGE, 24,001 params ✓
+- [x] M5.3 — GNN training & evaluation vs. XGBoost baseline — Top-1=0.86–1.0, Top-3=0.93–1.0, MRR=0.90–1.0, ROC-AUC=0.938, CUDA accelerated on RTX 5060 ✓
 
 ## Phase 6 — Explainability & Recommendations (M6.1–M6.3)
 
