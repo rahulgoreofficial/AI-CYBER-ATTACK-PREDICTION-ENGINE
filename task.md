@@ -95,13 +95,15 @@
 
 ---
 
-## Phase 8 — Frontend Dashboard (M8.1–M8.5) ⬅️ NEXT PHASE
+## Phase 8 — Frontend Dashboard (M8.1–M8.5) ✅ COMPLETE
 
-- [ ] M8.1 — React + Tailwind CSS scaffold
-- [ ] M8.2 — Cytoscape.js Network Graph visualization
-- [ ] M8.3 — Ranked prediction list & dynamic risk dashboard
-- [ ] M8.4 — SHAP explanation panel & defensive actions cards
-- [ ] M8.5 — Attack propagation path animation
+- [x] M8.1 — React + Vite cyber-theme scaffold (`src/index.css`, `App.jsx`, `Sidebar.jsx`, `Header.jsx`) ✓
+- [x] M8.2 — Cytoscape.js Network Graph visualization (dagre layout, 21 nodes, 30 edges, risk overlays, legend) ✓
+- [x] M8.3 — Ranked prediction list & dynamic risk dashboard (`PredictionPanel.jsx`, `RiskTable.jsx`, `TimelineSelector.jsx`, `MetricsPanel.jsx`) ✓
+- [x] M8.4 — SHAP explanation panel & defensive actions cards (`ExplanationPanel.jsx`, `RecommendationPanel.jsx`) ✓
+- [x] M8.5 — Attack propagation path animation (`AttackPath.jsx`, 5-hop path trace & graph highlight) ✓
+- [x] Deliverable: Technical Analysis & Quickstart Guide PDF (`AI_Cyber_Attack_Prediction_Engine_Analysis_and_Tutorial.pdf`) ✓
+- [x] Deliverable: End-to-end automated verification script passing for all ML, Backend, and Frontend layers ✓
 
 ## Phase 9 — Integration & Evaluation (M9.1–M9.5)
 

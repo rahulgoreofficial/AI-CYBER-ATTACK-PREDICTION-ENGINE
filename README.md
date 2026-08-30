@@ -104,24 +104,6 @@ pip install -r requirements.txt
 8. **Frontend** — React + Cytoscape.js dashboard
 9. **Evaluation** — Ablation study, comparison, documentation
 
-## Research Questions
-
-- **RQ1**: Can graph topology features improve next-target prediction vs. tabular ML?
-- **RQ2**: Does temporal ordering improve next-target ranking?
-- **RQ3**: Does asset criticality improve defensive prioritization?
-- **RQ4**: Can explainable AI provide useful reasons for predictions?
-- **RQ5**: How early can we predict a target before the event?
-- **RQ6**: Does the approach generalize across datasets?
-
-## Team
-
-| Role | Responsibility |
-|---|---|
-| Member 1 | Data & Research |
-| Member 2 | Graph & ML |
-| Member 3 | Backend & Security Logic |
-| Member 4 | Frontend & Visualization |
-
 ## License
 
 This project is developed for academic purposes at VIT as a 3rd-semester Computer Engineering project.
