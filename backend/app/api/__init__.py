@@ -1,1 +1,1 @@
-"""API route definitions."""
+"""API route definitions — all endpoint routers."""

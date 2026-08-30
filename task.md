@@ -64,14 +64,38 @@
 - [x] M6.2 — Rule-based recommendation engine (`backend/app/recommendations/engine.py`) — 10 prioritized rules across 7 categories (incident response, isolation, access control, monitoring, patching, micro-segmentation, data protection) with unit tests passing ✓
 - [x] M6.3 — Temporal model experimentation (`ml/temporal/temporal_lstm.py`) — Lookback sequence dataset (1,615 sequences), 1-layer LSTM (47,681 params), Top-1=0.57, Top-3=0.86, MRR=0.71, PR-AUC=0.59, ROC-AUC=0.92, model saved to `models/temporal_lstm.pt` ✓
 
-## Phase 7 — Backend (M7.1–M7.4)
+---
 
-- [ ] M7.1 — FastAPI app scaffolding
-- [ ] M7.2 — Network, Risk, & Prediction API endpoints
-- [ ] M7.3 — Analysis trigger endpoint
-- [ ] M7.4 — Explanation & Recommendation endpoints
+## Phase 7 — Backend (M7.1–M7.4) ✅ COMPLETE
 
-## Phase 8 — Frontend Dashboard (M8.1–M8.5)
+### M7.1 — FastAPI App Scaffolding
+- [x] Create `backend/app/main.py` — FastAPI entry point with CORS, lifespan startup, health check ✓
+- [x] Create `backend/app/models/schemas.py` — 18 Pydantic v2 models for all endpoints ✓
+- [x] Create `backend/app/services/data_loader.py` — Singleton loading 21 devices, 255 risk entries, 1,649 explanations, 3 ML models ✓
+- [x] Verify server starts and `/health` returns 200 ✓
+
+### M7.2 — Network, Risk & Prediction API Endpoints
+- [x] Create `backend/app/api/network.py` — `GET /api/network` (21 nodes, 30 edges, risk overlay) ✓
+- [x] Create `backend/app/api/risk.py` — `GET /api/risk` (ranked risk scores, WEB-SERVER-01 #1) ✓
+- [x] Create `backend/app/api/predictions.py` — `GET /api/predictions` (top-K targets with probabilities) ✓
+- [x] Create `backend/app/api/timeline.py` — `GET /api/timeline` (15 time windows) ✓
+- [x] Create `backend/app/api/evaluation.py` — `GET /api/evaluation` (6 models, best=Dynamic Risk F1=1.0) ✓
+- [x] Create `backend/app/services/prediction_service.py` — Prediction inference + analysis logic ✓
+- [x] Create `backend/app/services/risk_service.py` — Risk score lookups + window listing ✓
+- [x] Create `backend/app/services/graph_service.py` — Topology formatting with risk overlays ✓
+
+### M7.3 — Analysis Trigger Endpoint
+- [x] Create `backend/app/api/analyze.py` — `POST /api/analyze` (returns predictions + risk scores) ✓
+
+### M7.4 — Explanation & Recommendation Endpoints
+- [x] Create `backend/app/api/explanation.py` — `GET /api/explanation/{device_id}` (97 SHAP explanations for WEB-SERVER-01) ✓
+- [x] Create `backend/app/api/recommendations.py` — `GET /api/recommendations/{device_id}` (SOC escalation, monitoring, segmentation) ✓
+- [x] Create `backend/app/api/attack_path.py` — `GET /api/attack-path/{device_id}` (5-hop path: PC-08→...→WEB-SERVER-01) ✓
+- [x] End-to-end verification: **11/11 endpoints return correct JSON, all HTTP 200** ✓
+
+---
+
+## Phase 8 — Frontend Dashboard (M8.1–M8.5) ⬅️ NEXT PHASE
 
 - [ ] M8.1 — React + Tailwind CSS scaffold
 - [ ] M8.2 — Cytoscape.js Network Graph visualization
