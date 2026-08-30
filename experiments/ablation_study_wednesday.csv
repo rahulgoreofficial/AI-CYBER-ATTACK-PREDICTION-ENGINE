@@ -1,0 +1,11 @@
+model,top_1_hit_rate,top_3_hit_rate,top_5_hit_rate,mrr,pr_auc,roc_auc,precision,recall,f1,n_features,feature_groups_removed
+A1: Heuristic Baseline,1.0,1.0,1.0,1.0,0.9999999999999999,1.0,0.25,1.0,0.4,3,none (heuristic)
+A2: XGBoost (all features),1.0,1.0,1.0,1.0,1.0,0.9999999999999999,0.9333333333333333,1.0,0.9655172413793104,120,none
+A3: XGBoost + Isolation Forest,1.0,1.0,1.0,1.0,0.9999999999999999,1.0,0.9333333333333333,1.0,0.9655172413793104,120,none (+ anomaly score)
+A4: Dynamic Risk Engine,1.0,1.0,1.0,1.0,0.9999999999999999,1.0,1.0,1.0,1.0,120,none (full risk formula)
+B1: XGBoost — No Traffic,1.0,1.0,1.0,1.0,1.0,1.0,0.9333333333333333,1.0,0.9655172413793104,31,traffic
+B2: XGBoost — No Graph,1.0,1.0,1.0,1.0,0.9999999999999998,1.0,0.9333333333333333,1.0,0.9655172413793104,113,graph
+B3: XGBoost — No Asset,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9285714285714286,0.9629629629629629,111,asset
+B4: XGBoost — Graph + Asset only,1.0,1.0,1.0,1.0,1.0,1.0,0.9333333333333333,1.0,0.9655172413793104,31,traffic
+B5: XGBoost — Traffic + Asset only,1.0,1.0,1.0,1.0,0.9999999999999998,1.0,0.9333333333333333,1.0,0.9655172413793104,113,graph
+B6: XGBoost — Traffic + Graph only,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9285714285714286,0.9629629629629629,111,asset

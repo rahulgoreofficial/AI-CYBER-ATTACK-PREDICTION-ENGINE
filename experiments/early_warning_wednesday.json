@@ -1,0 +1,132 @@
+{
+  "dataset": "CICIDS2017 Wednesday",
+  "window_size_minutes": 5,
+  "prediction_horizon_minutes": 15,
+  "total_test_windows_with_targets": 14,
+  "correct_top1_predictions": 14,
+  "incorrect_top1_predictions": 1,
+  "top1_accuracy": 1.0,
+  "early_warning": {
+    "mean_lead_time_minutes": 5.0,
+    "min_lead_time_minutes": 5.0,
+    "max_lead_time_minutes": 5.0,
+    "median_lead_time_minutes": 5.0,
+    "std_lead_time_minutes": 0.0,
+    "mean_lead_time_windows": 1.0
+  },
+  "per_window_details": [
+    {
+      "prediction_window": 82,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 83,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7834036428707241
+    },
+    {
+      "prediction_window": 83,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 84,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7873102305640147
+    },
+    {
+      "prediction_window": 84,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 85,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.8029709512163543
+    },
+    {
+      "prediction_window": 85,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 86,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7831478780468473
+    },
+    {
+      "prediction_window": 86,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 87,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.8082088309764589
+    },
+    {
+      "prediction_window": 87,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 88,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7953674612459666
+    },
+    {
+      "prediction_window": 88,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 89,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7941041220599686
+    },
+    {
+      "prediction_window": 89,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 90,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7691020605650811
+    },
+    {
+      "prediction_window": 90,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 91,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7903688290702964
+    },
+    {
+      "prediction_window": 91,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 92,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.8031213074498564
+    },
+    {
+      "prediction_window": 92,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 93,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7885454272757499
+    },
+    {
+      "prediction_window": 93,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 94,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7906362897410651
+    },
+    {
+      "prediction_window": 94,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 95,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7990233707309191
+    },
+    {
+      "prediction_window": 95,
+      "predicted_device": "WEB-SERVER-01",
+      "earliest_attack_window": 96,
+      "lead_time_windows": 1,
+      "lead_time_minutes": 5,
+      "pred_score": 0.7743414347436729
+    }
+  ],
+  "interpretation": "On average, the model correctly identifies the next attack target 5.0 minutes before the attack begins, giving defenders 5 minutes to respond."
+}

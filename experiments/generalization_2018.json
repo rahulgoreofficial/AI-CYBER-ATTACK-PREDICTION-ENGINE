@@ -1,0 +1,28 @@
+{
+  "dataset": "CSE-CIC-IDS2018",
+  "source_file": "02-14-2018.csv",
+  "rows_loaded": 300000,
+  "windows": 50,
+  "device_count": 21,
+  "attack_types": {
+    "FTP-BruteForce": 179244,
+    "SSH-Bruteforce": 119961,
+    "Benign": 795
+  },
+  "positive_rate": 0.1148,
+  "model": "XGBoost trained on CICIDS2017 Wednesday (zero-shot)",
+  "features_matched": 10,
+  "features_total": 120,
+  "results": {
+    "top_1_hit_rate": 0.5306,
+    "top_3_hit_rate": 1.0,
+    "top_5_hit_rate": 1.0,
+    "mrr": 0.7109,
+    "pr_auc": 0.3101,
+    "roc_auc": 0.8558,
+    "precision": 0.3101,
+    "recall": 1.0,
+    "f1": 0.4734
+  },
+  "notes": "Zero-shot generalization: model trained on CICIDS2017 Wednesday, applied without retraining to CSE-CIC-IDS2018. Device IDs are synthetic (assigned by destination port heuristic). Missing features filled with 0."
+}
