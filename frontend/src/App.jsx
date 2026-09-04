@@ -10,8 +10,7 @@ import Dashboard from './pages/Dashboard';
 export default function App() {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [currentWindowId, setCurrentWindowId] = useState(null);
-  const [stats, setStats] = useState({ deviceCount: null, windowCount: null });
+  const [stats, setStats] = useState({ deviceCount: null });
 
   const handleDeviceSelect = useCallback((device) => {
     setSelectedDevice(device);
@@ -19,10 +18,6 @@ export default function App() {
 
   const handleDataLoaded = useCallback((data) => {
     setStats((prev) => ({ ...prev, ...data }));
-  }, []);
-
-  const handleWindowChange = useCallback((windowId) => {
-    setCurrentWindowId(windowId);
   }, []);
 
   return (
@@ -34,19 +29,13 @@ export default function App() {
       />
 
       <main className="app-main">
-        <Header
-          deviceCount={stats.deviceCount}
-          windowCount={stats.windowCount}
-          currentWindowId={currentWindowId}
-        />
+        <Header deviceCount={stats.deviceCount} />
 
         <div className="app-content">
           <Dashboard
             selectedDevice={selectedDevice}
             onDeviceSelect={handleDeviceSelect}
             onDataLoaded={handleDataLoaded}
-            currentWindowId={currentWindowId}
-            onWindowChange={handleWindowChange}
             activeSection={activeSection}
           />
         </div>

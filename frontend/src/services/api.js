@@ -4,7 +4,9 @@
  */
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+const isBrowser = typeof window !== 'undefined';
+const host = isBrowser && window.location.hostname ? window.location.hostname : 'localhost';
+const API_BASE = `http://${host}:8000`;
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -14,8 +16,8 @@ const api = axios.create({
 
 // ── Network ──────────────────────────────────────────────────────────────────
 
-export async function fetchNetwork(windowId) {
-  const params = {};
+export async function fetchNetwork(windowId, source = 'lan') {
+  const params = { source };
   if (windowId != null) params.window_id = windowId;
   const { data } = await api.get('/api/network', { params });
   return data;
@@ -23,8 +25,8 @@ export async function fetchNetwork(windowId) {
 
 // ── Risk ─────────────────────────────────────────────────────────────────────
 
-export async function fetchRisk(windowId) {
-  const params = {};
+export async function fetchRisk(windowId, source = 'lan') {
+  const params = { source };
   if (windowId != null) params.window_id = windowId;
   const { data } = await api.get('/api/risk', { params });
   return data;
@@ -32,8 +34,8 @@ export async function fetchRisk(windowId) {
 
 // ── Predictions ──────────────────────────────────────────────────────────────
 
-export async function fetchPredictions(windowId, topK = 5, model = 'xgboost') {
-  const params = { top_k: topK, model };
+export async function fetchPredictions(windowId, topK = 5, model = 'xgboost', source = 'lan') {
+  const params = { top_k: topK, model, source };
   if (windowId != null) params.window_id = windowId;
   const { data } = await api.get('/api/predictions', { params });
   return data;
@@ -82,12 +84,27 @@ export async function fetchAttackPath(deviceId, windowId) {
 
 // ── Analyze ──────────────────────────────────────────────────────────────────
 
-export async function triggerAnalysis(windowId, model = 'xgboost', topK = 5) {
-  const { data } = await api.post('/api/analyze', {
+export async function triggerAnalysis(windowId, model = 'xgboost', topK = 5, weights = null) {
+  const payload = {
     window_id: windowId,
     model,
     top_k: topK,
-  });
+  };
+  if (weights) {
+    if (weights.w_prob != null) payload.w_prob = weights.w_prob;
+    if (weights.w_anom != null) payload.w_anom = weights.w_anom;
+    if (weights.w_crit != null) payload.w_crit = weights.w_crit;
+    if (weights.w_expo != null) payload.w_expo = weights.w_expo;
+    if (weights.w_vuln != null) payload.w_vuln = weights.w_vuln;
+  }
+  const { data } = await api.post('/api/analyze', payload);
+  return data;
+}
+
+// ── LAN Network Devices ──────────────────────────────────────────────────────
+
+export async function fetchLanDevices() {
+  const { data } = await api.get('/api/network/lan-devices');
   return data;
 }
 

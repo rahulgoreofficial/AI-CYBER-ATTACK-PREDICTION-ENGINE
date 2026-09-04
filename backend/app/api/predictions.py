@@ -19,12 +19,15 @@ async def get_prediction_list(
     window_id: Optional[int] = Query(None, description="Time window ID (default: latest)"),
     top_k: int = Query(5, ge=1, le=21, description="Number of top predictions"),
     model: str = Query("xgboost", description="Model: xgboost, gnn, temporal"),
+    source: Optional[str] = Query("lan", description="'lan' for real network devices, 'campus' for benchmark"),
 ):
     """
     Get top-K predicted future attack targets.
-
-    Returns a ranked list of devices most likely to be the next attack
-    target, with their attack probability, risk score, and device metadata.
+    Defaults to real physical LAN devices, or enterprise campus simulation.
     """
+    if source == "lan":
+        from backend.app.services.lan_service import get_lan_predictions
+        return get_lan_predictions(top_k=top_k, model=model)
+
     result = get_predictions(window_id=window_id, top_k=top_k, model=model)
     return result

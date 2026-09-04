@@ -17,13 +17,15 @@ router = APIRouter(prefix="/api", tags=["Network"])
 @router.get("/network", response_model=NetworkResponse)
 async def get_network(
     window_id: Optional[int] = Query(None, description="Time window ID for risk overlay"),
+    source: Optional[str] = Query("lan", description="'lan' for real physical network devices, 'campus' for 21-node benchmark"),
 ):
     """
-    Get the campus network topology.
-
-    Returns all devices (nodes) and connections (edges) with optional
-    risk score overlays from a specific time window. If no window_id
-    is provided, uses the latest available window.
+    Get network topology with risk overlays.
+    Defaults to 'lan' (real connected devices on local Wi-Fi/LAN), or 'campus' (benchmark model).
     """
+    if source == "lan":
+        from backend.app.services.lan_service import get_lan_network_topology
+        return get_lan_network_topology()
+
     result = get_network_topology(window_id=window_id)
     return result

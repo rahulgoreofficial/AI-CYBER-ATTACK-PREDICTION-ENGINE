@@ -52,6 +52,8 @@ class DataStore:
         self.devices: list[dict] = []
         self.connections: list[dict] = []
         self.device_map: dict[str, dict] = {}  # device_id → device metadata
+        self.adjacency: dict[str, list[str]] = {}
+        self.topology_exposure_map: dict[str, float] = {}
 
         # Risk scores
         self.risk_scores: list[dict] = []
@@ -65,23 +67,27 @@ class DataStore:
         # Model comparison
         self.model_comparison: list[dict] = []
 
-        # Feature matrix metadata
+        # Feature matrix metadata & DataFrame
+        self.feature_df: Any = None
         self.feature_columns: list[str] = []
+        self.feat_cols_120: list[str] = []
         self.window_ids: list[int] = []
 
-        # XGBoost model
+        # Live ML models
         self.xgboost_model: Any = None
         self.xgboost_if_model: Any = None
         self.isolation_forest_model: Any = None
+        self.gnn_model: Any = None
+        self.lstm_model: Any = None
         self.models_loaded: bool = False
 
     def load_all(self) -> None:
-        """Load all data assets from disk into memory."""
+        """Load all data assets and ML models from disk into memory."""
         if self._loaded:
             logger.info("Data store already loaded, skipping.")
             return
 
-        logger.info("Loading all data assets into memory...")
+        logger.info("Loading all data assets and ML models into memory...")
 
         self._load_topology()
         self._load_risk_scores()
@@ -108,7 +114,7 @@ class DataStore:
     # ──────────────────────────────────────────────────────────────────────
 
     def _load_topology(self) -> None:
-        """Load campus_topology.json."""
+        """Load campus_topology.json and compute network graph metrics."""
         topo_path = PROJECT_ROOT / "data" / "synthetic" / "campus_topology.json"
         if not topo_path.exists():
             logger.warning(f"Topology file not found: {topo_path}")
@@ -120,6 +126,23 @@ class DataStore:
         self.devices = self.topology.get("devices", [])
         self.connections = self.topology.get("connections", [])
         self.device_map = {d["id"]: d for d in self.devices}
+
+        # Build adjacency graph
+        self.adjacency = {}
+        degree_map: dict[str, int] = {}
+        for conn in self.connections:
+            src, dst = conn["from"], conn["to"]
+            self.adjacency.setdefault(src, []).append(dst)
+            self.adjacency.setdefault(dst, []).append(src)
+            degree_map[src] = degree_map.get(src, 0) + 1
+            degree_map[dst] = degree_map.get(dst, 0) + 1
+
+        # Normalize degree exposure [0, 1] for all devices
+        max_deg = max(degree_map.values()) if degree_map else 1
+        self.topology_exposure_map = {
+            dev_id: round(degree_map.get(dev_id, 1) / max_deg, 3)
+            for dev_id in self.device_map.keys()
+        }
 
         logger.info(f"Loaded topology: {len(self.devices)} devices, {len(self.connections)} connections")
 
@@ -220,7 +243,7 @@ class DataStore:
     # ──────────────────────────────────────────────────────────────────────
 
     def _load_feature_columns(self) -> None:
-        """Load the feature column names."""
+        """Load feature columns and feature matrix DataFrame into memory."""
         cols_path = PROJECT_ROOT / "data" / "processed" / "cicids2017_wednesday_feature_cols.txt"
         if cols_path.exists():
             with open(cols_path, "r", encoding="utf-8") as f:
@@ -229,12 +252,31 @@ class DataStore:
         else:
             logger.warning(f"Feature columns file not found: {cols_path}")
 
+        fm_path = PROJECT_ROOT / "data" / "processed" / "ml_feature_matrix_wednesday.csv"
+        if fm_path.exists():
+            try:
+                import pandas as pd
+                import numpy as np
+                self.feature_df = pd.read_csv(fm_path, low_memory=False)
+                exclude = {
+                    "window_id", "device_id", "is_future_target",
+                    "target_attack_count", "target_attack_types", "earliest_target_window",
+                }
+                self.feat_cols_120 = [
+                    c for c in self.feature_df.columns
+                    if c not in exclude
+                    and self.feature_df[c].dtype in [np.float64, np.int64, np.float32, np.int32, np.uint8, bool]
+                ]
+                logger.info(f"Loaded feature matrix DataFrame: {len(self.feature_df)} rows x {len(self.feat_cols_120)} features")
+            except Exception as e:
+                logger.warning(f"Failed to load feature matrix DataFrame: {e}")
+
     # ──────────────────────────────────────────────────────────────────────
     # ML MODELS
     # ──────────────────────────────────────────────────────────────────────
 
     def _load_ml_models(self) -> None:
-        """Load trained ML models (XGBoost, Isolation Forest)."""
+        """Load all trained ML models: XGBoost, Isolation Forest, GNN, and Temporal LSTM."""
         models_dir = PROJECT_ROOT / "models"
 
         # XGBoost baseline
@@ -267,10 +309,46 @@ class DataStore:
             except Exception as e:
                 logger.warning(f"Failed to load Isolation Forest model: {e}")
 
+        # GNN (GraphSAGE)
+        gnn_path = models_dir / "gnn_model.pt"
+        if gnn_path.exists():
+            try:
+                import torch
+                from ml.gnn.model import NextTargetGNN
+                gnn_ckpt = torch.load(gnn_path, map_location="cpu", weights_only=False)
+                self.gnn_model = NextTargetGNN(**gnn_ckpt["config"])
+                self.gnn_model.load_state_dict(gnn_ckpt["model_state_dict"])
+                self.gnn_model.eval()
+                logger.info("Loaded GraphSAGE GNN model")
+            except Exception as e:
+                logger.warning(f"Failed to load GNN model: {e}")
+
+        # Temporal LSTM
+        lstm_path = models_dir / "temporal_lstm.pt"
+        if lstm_path.exists():
+            try:
+                import torch
+                from ml.temporal.temporal_lstm import TemporalLSTM
+                lstm_ckpt = torch.load(lstm_path, map_location="cpu", weights_only=False)
+                cfg = lstm_ckpt["config"]
+                self.lstm_model = TemporalLSTM(
+                    input_dim=cfg["input_dim"],
+                    hidden_dim=cfg["hidden_dim"],
+                    num_layers=cfg["num_layers"],
+                    dropout=cfg.get("dropout", 0.3),
+                )
+                self.lstm_model.load_state_dict(lstm_ckpt["model_state_dict"])
+                self.lstm_model.eval()
+                logger.info("Loaded Temporal LSTM model")
+            except Exception as e:
+                logger.warning(f"Failed to load Temporal LSTM model: {e}")
+
         self.models_loaded = any([
             self.xgboost_model is not None,
             self.xgboost_if_model is not None,
             self.isolation_forest_model is not None,
+            self.gnn_model is not None,
+            self.lstm_model is not None,
         ])
 
     # ──────────────────────────────────────────────────────────────────────
@@ -292,9 +370,29 @@ class DataStore:
         """Get device metadata by ID."""
         return self.device_map.get(device_id)
 
+    def get_topology_exposure(self, device_id: str) -> float:
+        """Get precomputed normalized degree exposure for a device."""
+        return self.topology_exposure_map.get(device_id, 0.3)
+
     def get_latest_window_id(self) -> int:
         """Get the most recent window ID."""
         return self.window_ids[-1] if self.window_ids else 0
+
+    def get_device_features(self, window_id: int, device_id: str):
+        """Get raw 120-feature numpy vector for a (window, device) pair, or zero-vector fallback."""
+        import numpy as np
+        if self.feature_df is not None and len(self.feat_cols_120) > 0:
+            match = self.feature_df[
+                (self.feature_df["window_id"] == window_id) &
+                (self.feature_df["device_id"] == device_id)
+            ]
+            if len(match) > 0:
+                vec = match[self.feat_cols_120].values[0].astype(np.float32)
+                return np.nan_to_num(vec, nan=0.0, posinf=0.0, neginf=0.0)
+
+        # Baseline fallback for devices without raw flows in this window
+        n_feats = len(self.feat_cols_120) if len(self.feat_cols_120) > 0 else 120
+        return np.zeros(n_feats, dtype=np.float32)
 
 
 # ==============================================================================

@@ -72,7 +72,7 @@ export default function NetworkGraph({
         group: 'nodes',
         data: {
           id: node.id,
-          label: node.id.replace(/-/g, '\n'),
+          label: node.label || node.id.replace(/-/g, '\n'),
           type: node.type,
           department: node.department,
           vlan: node.vlan,

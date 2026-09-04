@@ -91,13 +91,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",   # Vite dev server
-        "http://localhost:3000",   # React dev server (CRA)
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "http://localhost:8080",
-    ],
+    allow_origins=["*"],  # Allow localhost and any device on the same LAN/Wi-Fi subnet
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -106,7 +100,7 @@ app.add_middleware(
 
 # ──────────────────────────────────────────────────────────────────────────
 # REGISTER ROUTERS
-# ──────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────
 
 from backend.app.api.network import router as network_router
 from backend.app.api.risk import router as risk_router
@@ -117,6 +111,7 @@ from backend.app.api.analyze import router as analyze_router
 from backend.app.api.explanation import router as explanation_router
 from backend.app.api.recommendations import router as recommendations_router
 from backend.app.api.attack_path import router as attack_path_router
+from backend.app.api.lan import router as lan_router
 
 app.include_router(network_router)
 app.include_router(risk_router)
@@ -127,6 +122,7 @@ app.include_router(analyze_router)
 app.include_router(explanation_router)
 app.include_router(recommendations_router)
 app.include_router(attack_path_router)
+app.include_router(lan_router)
 
 
 # ──────────────────────────────────────────────────────────────────────────

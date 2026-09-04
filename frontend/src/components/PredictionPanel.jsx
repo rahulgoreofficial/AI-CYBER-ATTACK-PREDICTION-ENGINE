@@ -105,8 +105,8 @@ export default function PredictionPanel({ predictions, selectedDevice, onDeviceS
         fontSize: '0.65rem',
         color: 'var(--text-muted)',
       }}>
-        <span>Model: <span className="font-mono" style={{ color: 'var(--accent-magenta)' }}>{predictions.model}</span></span>
-        <span>Window: <span className="font-mono">W{predictions.window_id}</span></span>
+        <span>Model: <span className="font-mono" style={{ color: 'var(--accent-magenta)' }}>{predictions.model?.toUpperCase()}</span></span>
+        <span>Feed: <span className="font-mono" style={{ color: '#22c55e' }}>● Real-Time Stream</span></span>
       </div>
     </div>
   );

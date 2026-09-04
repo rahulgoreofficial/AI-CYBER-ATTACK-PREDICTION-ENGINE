@@ -18,13 +18,21 @@ async def trigger_analysis(request: AnalyzeRequest):
     """
     Trigger a full analysis for a specific time window.
 
-    Runs prediction and risk scoring for the selected window and
-    returns the complete analysis results including top-K predictions
-    and all device risk scores.
+    Runs live model prediction (XGBoost, GNN, or Temporal LSTM) and dynamic
+    risk scoring for the selected window with custom weights, returning top-K
+    predictions and all device risk scores.
     """
+    weights = {
+        "w_prob": request.w_prob,
+        "w_anom": request.w_anom,
+        "w_crit": request.w_crit,
+        "w_expo": request.w_expo,
+        "w_vuln": request.w_vuln,
+    }
     result = run_analysis(
         window_id=request.window_id,
         model=request.model,
         top_k=request.top_k,
+        weights=weights,
     )
     return result

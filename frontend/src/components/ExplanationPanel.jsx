@@ -49,12 +49,22 @@ export default function ExplanationPanel({ explanation, selectedDevice }) {
           <span className="cyber-card__title-icon">◐</span>
           SHAP Explanation
         </div>
-        <span className="font-mono" style={{
-          fontSize: '0.7rem',
-          color: 'var(--accent-magenta)',
-        }}>
-          {deviceId}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="cyber-card__badge" style={{
+            background: 'rgba(124, 58, 237, 0.15)',
+            color: 'var(--accent-pink)',
+            border: '1px solid rgba(124, 58, 237, 0.3)',
+            fontSize: '0.62rem',
+          }}>
+            ⚡ Live Tree SHAP
+          </span>
+          <span className="font-mono" style={{
+            fontSize: '0.72rem',
+            color: 'var(--accent-magenta)',
+          }}>
+            {deviceId}
+          </span>
+        </div>
       </div>
 
       {/* Attack probability summary */}
@@ -93,8 +103,8 @@ export default function ExplanationPanel({ explanation, selectedDevice }) {
               {(explanation.explanations[0].base_value * 100).toFixed(1)}%
             </div>
           </div>
-          <div style={{ marginLeft: 'auto', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
-            W{explanation.explanations[0].window_id}
+          <div style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#22c55e', fontWeight: 600 }}>
+            ● Live Stream
           </div>
         </div>
       )}

@@ -29,14 +29,10 @@ async def get_attack_path(
     """
     store = get_data_store()
 
-    # Validate device exists
-    device_info = store.get_device_info(device_id)
-    if device_info is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Device '{device_id}' not found. "
-                   f"Available devices: {list(store.device_map.keys())}",
-        )
+    # Check if this is a real physical LAN device
+    if any(k in device_id for k in ["192.168", "HOST", "LAN", "Router", "Gateway", "Phone", "Smart", "Peer", "Client"]) or device_info is None:
+        from backend.app.services.lan_service import get_lan_attack_path
+        return get_lan_attack_path(device_id)
 
     if window_id is None:
         window_id = store.get_latest_window_id()

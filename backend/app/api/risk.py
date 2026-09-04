@@ -17,13 +17,15 @@ router = APIRouter(prefix="/api", tags=["Risk"])
 @router.get("/risk", response_model=RiskResponse)
 async def get_risk(
     window_id: Optional[int] = Query(None, description="Time window ID (default: latest)"),
+    source: Optional[str] = Query("lan", description="'lan' for real network devices, 'campus' for benchmark"),
 ):
     """
-    Get dynamic risk scores for all devices in a time window.
-
-    Returns devices ranked by dynamic risk score, which combines
-    attack probability, anomaly score, vulnerability, topology exposure,
-    criticality, and recency.
+    Get dynamic risk scores for all devices.
+    Defaults to real physical LAN devices, or enterprise campus simulation.
     """
+    if source == "lan":
+        from backend.app.services.lan_service import get_lan_risk_scores
+        return get_lan_risk_scores()
+
     result = get_risk_scores(window_id=window_id)
     return result
