@@ -24,12 +24,13 @@ data/raw/
 data/processed/*.csv
 data/processed/*.parquet
 
-# ---- Trained Models (large binaries) ----
-models/*.pkl
-models/*.pt
-models/*.pth
-models/*.joblib
-models/*.xgb
+# ---- Trained Models (<2MB total - tracked for live API inference) ----
+# models/*.pkl
+# models/*.pt
+# models/*.pth
+
+# ---- Hugging Face Space Working Repo ----
+hf_space/
 
 # ---- Experiment Outputs ----
 experiments/runs/
