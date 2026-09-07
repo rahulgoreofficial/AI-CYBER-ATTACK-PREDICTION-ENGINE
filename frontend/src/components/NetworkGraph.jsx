@@ -30,6 +30,8 @@ export default function NetworkGraph({
     firewall: 'star',
     access_point: 'triangle',
     printer: 'rectangle',
+    mobile: 'round-pentagon',
+    iot: 'round-octagon',
   };
 
   // Risk level → color mapping
@@ -52,6 +54,8 @@ export default function NetworkGraph({
       firewall: '#dc2626',
       access_point: '#a855f7',
       printer: '#71717a',
+      mobile: '#3b82f6',
+      iot: '#f59e0b',
     };
     return typeColors[node.type] || '#6366f1';
   }, []);
@@ -68,6 +72,9 @@ export default function NetworkGraph({
       const isCritical = node.risk_level === 'critical' || node.risk_level === 'high';
       const shape = typeShapeMap[node.type] || 'ellipse';
 
+      const isNew = node.status === 'new';
+      const isOffline = node.status === 'offline';
+
       elements.push({
         group: 'nodes',
         data: {
@@ -80,12 +87,17 @@ export default function NetworkGraph({
           risk_score: node.risk_score,
           risk_level: node.risk_level,
           attack_probability: node.attack_probability,
-          color,
+          manufacturer: node.manufacturer || '',
+          hostname: node.hostname || '',
+          status: node.status || 'online',
+          color: isOffline ? '#52525b' : color,
           shape,
-          borderWidth: isCritical ? 3 : 1.5,
-          borderColor: isCritical ? color : 'rgba(124, 58, 237, 0.4)',
+          borderWidth: isNew ? 4 : isCritical ? 3 : 1.5,
+          borderColor: isNew ? '#22c55e' : isCritical ? color : 'rgba(124, 58, 237, 0.4)',
           size: mapSize(node.criticality),
+          opacity: isOffline ? 0.3 : 0.85,
         },
+        classes: isNew ? 'new-device' : isOffline ? 'offline-device' : '',
       });
     }
 
@@ -218,6 +230,26 @@ export default function NetworkGraph({
           selector: 'edge.dimmed',
           style: {
             'line-opacity': 0.05,
+          },
+        },
+        // New device — green glow animation
+        {
+          selector: 'node.new-device',
+          style: {
+            'border-width': 4,
+            'border-color': '#22c55e',
+            'border-opacity': 1,
+            'background-opacity': 1,
+          },
+        },
+        // Offline device — grayed out
+        {
+          selector: 'node.offline-device',
+          style: {
+            'background-opacity': 0.25,
+            'border-opacity': 0.15,
+            'text-opacity': 0.35,
+            'background-color': '#52525b',
           },
         },
       ],
@@ -355,9 +387,15 @@ function NetworkLegend() {
 
   const typeItems = [
     { label: 'Server', color: '#7c3aed' },
-    { label: 'Workstation', color: '#6366f1' },
     { label: 'Router', color: '#8b5cf6' },
-    { label: 'Firewall', color: '#dc2626' },
+    { label: 'Mobile', color: '#3b82f6' },
+    { label: 'IoT', color: '#f59e0b' },
+    { label: 'Workstation', color: '#6366f1' },
+  ];
+
+  const statusItems = [
+    { label: 'New', color: '#22c55e', glow: true },
+    { label: 'Offline', color: '#52525b' },
   ];
 
   return (
@@ -375,6 +413,20 @@ function NetworkLegend() {
       {typeItems.map((item) => (
         <div key={item.label} className="network-legend__item">
           <span className="network-legend__dot" style={{ background: item.color }} />
+          {item.label}
+        </div>
+      ))}
+      <span style={{ color: 'var(--border-subtle)', margin: '0 2px' }}>│</span>
+      {statusItems.map((item) => (
+        <div key={item.label} className="network-legend__item">
+          <span
+            className="network-legend__dot"
+            style={{
+              background: item.color,
+              boxShadow: item.glow ? `0 0 8px ${item.color}` : 'none',
+              animation: item.glow ? 'pulse 1.8s infinite' : 'none',
+            }}
+          />
           {item.label}
         </div>
       ))}

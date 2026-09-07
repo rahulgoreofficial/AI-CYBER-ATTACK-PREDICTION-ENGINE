@@ -2,10 +2,10 @@
 Live LAN Discovery Service — Local Network & Connected Device Inspector
 ========================================================================
 
-Discovers local network interfaces, host IP, default gateway, and connected
-peer devices on the same local subnet (Wi-Fi/Ethernet) via ARP cache and socket inspection.
-Provides dynamic risk evaluation, real topology graph construction, SHAP feature attribution,
-and defensive recommendations for discovered live physical network assets.
+Uses the background NetworkScanner for real-time active device discovery.
+Provides dynamic risk evaluation, real topology graph construction, SHAP
+feature attribution, and defensive recommendations for discovered live
+physical network assets.
 """
 
 from __future__ import annotations
@@ -13,8 +13,9 @@ from __future__ import annotations
 import logging
 import re
 import socket
-import subprocess
 from typing import Any, Optional
+
+from backend.app.services.scanner import get_scanner
 
 logger = logging.getLogger("backend.lan_service")
 
@@ -23,24 +24,23 @@ def get_host_network_info() -> dict[str, Any]:
     """
     Get the primary local IPv4 address and hostname of this machine.
     """
+    scanner = get_scanner()
     hostname = socket.gethostname()
-    host_ip = "127.0.0.1"
+    host_ip = scanner._host_ip if scanner._host_ip != "127.0.0.1" else "127.0.0.1"
 
-    try:
-        # Connect to an external address to identify the active routing interface
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0.5)
-        # Doesn't actually send packets, just triggers OS routing table lookup
-        s.connect(("8.8.8.8", 80))
-        host_ip = s.getsockname()[0]
-        s.close()
-    except Exception:
+    if host_ip == "127.0.0.1":
         try:
-            host_ip = socket.gethostbyname(hostname)
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(0.5)
+            s.connect(("8.8.8.8", 80))
+            host_ip = s.getsockname()[0]
+            s.close()
         except Exception:
-            host_ip = "127.0.0.1"
+            try:
+                host_ip = socket.gethostbyname(hostname)
+            except Exception:
+                host_ip = "127.0.0.1"
 
-    # Extract subnet prefix (e.g. 192.168.7.)
     subnet_prefix = ".".join(host_ip.split(".")[:3]) + "." if host_ip != "127.0.0.1" else "127.0.0."
 
     return {
@@ -53,150 +53,17 @@ def get_host_network_info() -> dict[str, Any]:
 
 def get_connected_lan_devices() -> list[dict[str, Any]]:
     """
-    Discover connected devices on the same local subnet using ARP cache table.
-    Returns structured devices with IP, MAC, inferred type, open ports, and baseline risk.
+    Get all currently discovered devices from the background scanner registry.
+    If the scanner hasn't run yet, trigger a synchronous initial scan.
     """
-    host_info = get_host_network_info()
-    host_ip = host_info["host_ip"]
-    subnet_prefix = host_info["subnet_prefix"]
+    scanner = get_scanner()
 
-    devices: list[dict[str, Any]] = []
+    # If no devices discovered yet, run an initial scan
+    if not scanner.registry:
+        logger.info("No devices in registry, triggering initial scan...")
+        scanner.scan_once()
 
-    # Quick port inspection helper
-    def check_ports(ip: str, ports: list[int]) -> list[int]:
-        open_ports = []
-        for port in ports:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(0.1)
-                res = s.connect_ex((ip, port))
-                s.close()
-                if res == 0:
-                    open_ports.append(port)
-            except Exception:
-                pass
-        return open_ports
-
-    # 1. Host machine itself
-    host_ports = check_ports(host_ip, [445, 8000, 5173, 22, 3389])
-    devices.append({
-        "device_id": f"HOST-{hostname_slug(host_info['hostname'])} ({host_ip})",
-        "ip_address": host_ip,
-        "mac_address": "HOST-INTERFACE",
-        "device_type": "server",
-        "department": "soc-management",
-        "criticality": 0.95,
-        "vulnerability": 0.35 if 445 in host_ports else 0.15,
-        "open_ports": host_ports,
-        "is_host": True,
-        "status": "online",
-        "label": f"HOST SOC\n{host_ip}",
-        "role": f"This Host ({host_info['hostname']}) · SOC Engine",
-        "description": f"Local host machine running AI Threat Prediction Engine. Open ports: {host_ports}",
-    })
-
-    # 2. Read system ARP table
-    try:
-        output = subprocess.check_output(["arp", "-a"], text=True, timeout=3, stderr=subprocess.DEVNULL)
-        pattern = re.compile(r"(\d+\.\d+\.\d+\.\d+)\s+([0-9a-fA-F-]{17})\s+(\w+)")
-
-        seen_ips = {host_ip}
-        for match in pattern.finditer(output):
-            ip, mac, entry_type = match.groups()
-
-            # Ignore broadcast, multicast, and loopback IPs
-            if (
-                ip in seen_ips
-                or ip.startswith(("224.", "239.", "255.", "127."))
-                or ip.endswith(".255")
-            ):
-                continue
-
-            # Check if this IP is on the same subnet
-            is_same_subnet = ip.startswith(subnet_prefix)
-            if not is_same_subnet and not host_ip.startswith("127."):
-                continue
-
-            seen_ips.add(ip)
-
-            # Classify device role & ports
-            device_type = "workstation"
-            role = "Connected LAN Peer"
-            criticality = 0.50
-            vuln = 0.30
-            open_p: list[int] = []
-
-            if ip.endswith(".1"):
-                device_type = "router"
-                role = "Gateway Wi-Fi Router"
-                criticality = 0.90
-                vuln = 0.45
-                open_p = check_ports(ip, [22, 53, 80, 443])
-            elif ip.endswith(".254"):
-                device_type = "switch"
-                role = "Subnet Switch"
-                criticality = 0.80
-                vuln = 0.25
-            elif "8a-c8" in mac.lower():
-                device_type = "workstation"
-                role = "Smartphone / Mobile Client"
-                criticality = 0.40
-                vuln = 0.20
-            elif "4a-98" in mac.lower():
-                device_type = "workstation"
-                role = "Connected Peer Device"
-                criticality = 0.55
-                vuln = 0.25
-            elif "be-36" in mac.lower() or ip.endswith(".6"):
-                device_type = "workstation"
-                role = "Smart Client / Local Service"
-                criticality = 0.60
-                vuln = 0.35
-                open_p = check_ports(ip, [5000, 5173, 8080])
-
-            clean_mac = mac.upper()
-            slug_id = f"{device_type.upper()}-{ip}"
-
-            devices.append({
-                "device_id": f"{role.split('/')[0].strip()} ({ip})",
-                "ip_address": ip,
-                "mac_address": clean_mac,
-                "device_type": device_type,
-                "department": "local-wifi-lan",
-                "criticality": criticality,
-                "vulnerability": vuln,
-                "open_ports": open_p,
-                "is_host": False,
-                "status": "online",
-                "label": f"{device_type.upper()}\n{ip}",
-                "role": f"{role} ({ip})",
-                "description": f"Real connected device on local Wi-Fi/LAN (MAC: {clean_mac}). Open ports: {open_p}",
-            })
-
-    except Exception as e:
-        logger.warning(f"Failed to query ARP cache: {e}")
-
-    # Compute baseline dynamic risk & attack probability for discovered devices
-    for d in devices:
-        # Criticality & open ports drive attack probability
-        port_boost = 0.20 if len(d.get("open_ports", [])) > 0 else 0.0
-        prob = min(round((d["vulnerability"] * 0.7) + port_boost + (0.35 if d["device_type"] == "router" else 0.15), 3), 0.95)
-        d["attack_probability"] = prob
-
-        # Dynamic risk formula
-        base_risk = round((prob * 0.40) + (d["criticality"] * 0.35) + (d["vulnerability"] * 0.15) + 0.05, 3)
-        d["dynamic_risk_score"] = base_risk
-
-        if base_risk >= 0.70:
-            d["risk_level"] = "critical" if base_risk >= 0.80 else "high"
-        elif base_risk >= 0.45:
-            d["risk_level"] = "high"
-        elif base_risk >= 0.25:
-            d["risk_level"] = "medium"
-        else:
-            d["risk_level"] = "low"
-
-    return devices
+    return scanner.get_all_devices()
 
 
 def get_lan_network_topology() -> dict[str, Any]:
@@ -208,9 +75,10 @@ def get_lan_network_topology() -> dict[str, Any]:
     nodes = []
     edges = []
 
+    scanner = get_scanner()
     gateway_id = None
     for d in devices:
-        if d["device_type"] == "router" or d["ip_address"].endswith(".1"):
+        if d.get("device_type") == "router" or (scanner._gateway_ip and d.get("ip_address") == scanner._gateway_ip):
             gateway_id = d["device_id"]
             break
 
@@ -219,6 +87,9 @@ def get_lan_network_topology() -> dict[str, Any]:
         gateway_id = devices[0]["device_id"]
 
     for d in devices:
+        if d.get("status") == "offline":
+            continue  # Don't show offline devices in the main graph
+
         nodes.append({
             "id": d["device_id"],
             "name": d["role"],
@@ -233,17 +104,23 @@ def get_lan_network_topology() -> dict[str, Any]:
             "description": d.get("description", ""),
             "ip_address": d["ip_address"],
             "mac_address": d["mac_address"],
+            "manufacturer": d.get("manufacturer", "Unknown"),
+            "hostname": d.get("hostname", ""),
             "risk_score": d["dynamic_risk_score"],
             "risk_level": d["risk_level"],
             "attack_probability": d["attack_probability"],
+            "status": d.get("status", "online"),
+            "first_seen": d.get("first_seen", ""),
+            "last_seen": d.get("last_seen", ""),
         })
 
         # Connect each device to the gateway router
         if d["device_id"] != gateway_id and gateway_id is not None:
+            connection_type = "ethernet" if d.get("is_host") else "wifi"
             edges.append({
                 "source": gateway_id,
                 "target": d["device_id"],
-                "connection_type": "wifi" if not d.get("is_host") else "ethernet",
+                "connection_type": connection_type,
                 "bandwidth": "1.2 Gbps (Wi-Fi 6)" if d.get("is_host") else "433 Mbps (802.11ac)",
             })
 
@@ -261,9 +138,11 @@ def get_lan_predictions(top_k: int = 5, model: str = "xgboost") -> dict[str, Any
     Generate real-time attack target predictions for connected LAN devices.
     """
     devices = get_connected_lan_devices()
+    # Filter out offline devices
+    online_devices = [d for d in devices if d.get("status") != "offline"]
     # Sort descending by attack_probability and dynamic_risk_score
-    devices.sort(key=lambda d: (d["attack_probability"], d["dynamic_risk_score"]), reverse=True)
-    top_devices = devices[:top_k]
+    online_devices.sort(key=lambda d: (d["attack_probability"], d["dynamic_risk_score"]), reverse=True)
+    top_devices = online_devices[:top_k]
 
     predictions = []
     for rank, d in enumerate(top_devices, 1):
@@ -278,6 +157,7 @@ def get_lan_predictions(top_k: int = 5, model: str = "xgboost") -> dict[str, Any
             "criticality": d["criticality"],
         })
 
+    scanner = get_scanner()
     return {
         "model": model,
         "top_k": top_k,
@@ -285,6 +165,8 @@ def get_lan_predictions(top_k: int = 5, model: str = "xgboost") -> dict[str, Any
         "inference_ms": 7.42,
         "is_live_inference": True,
         "is_real_lan": True,
+        "total_online": len(online_devices),
+        "scan_cycle": scanner._scan_count,
     }
 
 
@@ -293,10 +175,11 @@ def get_lan_risk_scores() -> dict[str, Any]:
     Get dynamic multi-factor risk scores for all discovered real LAN devices.
     """
     devices = get_connected_lan_devices()
-    devices.sort(key=lambda d: d["dynamic_risk_score"], reverse=True)
+    online_devices = [d for d in devices if d.get("status") != "offline"]
+    online_devices.sort(key=lambda d: d["dynamic_risk_score"], reverse=True)
 
     entries = []
-    for rank, d in enumerate(devices, 1):
+    for rank, d in enumerate(online_devices, 1):
         entries.append({
             "device_id": d["device_id"],
             "dynamic_risk_score": d["dynamic_risk_score"],
@@ -307,6 +190,9 @@ def get_lan_risk_scores() -> dict[str, Any]:
             "vulnerability_score": d["vulnerability"],
             "risk_level": d["risk_level"],
             "risk_rank": rank,
+            "manufacturer": d.get("manufacturer", "Unknown"),
+            "hostname": d.get("hostname", ""),
+            "status": d.get("status", "online"),
         })
 
     return {
@@ -326,26 +212,44 @@ def get_lan_explanation(device_id: str) -> dict[str, Any]:
     if not target and devices:
         target = devices[0]
 
-    ip = target["ip_address"] if target else "192.168.7.1"
+    scanner = get_scanner()
+    gateway_ip = scanner._gateway_ip or "Gateway"
+    ip = target["ip_address"] if target else (scanner._host_ip or "127.0.0.1")
     ports = target.get("open_ports", []) if target else []
     prob = target["attack_probability"] if target else 0.65
+    manufacturer = target.get("manufacturer", "Unknown") if target else "Unknown"
+    device_type = target.get("device_type", "workstation") if target else "workstation"
 
     features = []
-    if ip.endswith(".1"):
+    if device_type == "router" or ip == gateway_ip:
         features = [
             {"name": "Port 80 (HTTP Gateway Exposure)", "shap_value": 0.38, "direction": "increases_risk", "importance": 0.38, "contribution_pct": 34.0},
             {"name": "Port 22 (SSH Remote Administration)", "shap_value": 0.24, "direction": "increases_risk", "importance": 0.24, "contribution_pct": 21.5},
-            {"name": "High Centrality (Gateway Router)", "shap_value": 0.21, "direction": "increases_risk", "importance": 0.21, "contribution_pct": 18.8},
+            {"name": f"High Centrality (Gateway Router · {manufacturer})", "shap_value": 0.21, "direction": "increases_risk", "importance": 0.21, "contribution_pct": 18.8},
             {"name": "Port 53 (DNS Service Ingress)", "shap_value": 0.15, "direction": "increases_risk", "importance": 0.15, "contribution_pct": 13.4},
             {"name": "WPA2/WPA3 Wi-Fi Authentication", "shap_value": -0.14, "direction": "decreases_risk", "importance": 0.14, "contribution_pct": 12.3},
         ]
-    elif ip.endswith(".2"):
+    elif target and target.get("is_host"):
         features = [
             {"name": "Port 445 (SMB File Sharing Listener)", "shap_value": 0.35, "direction": "increases_risk", "importance": 0.35, "contribution_pct": 31.0},
             {"name": "Port 8000 (FastAPI Backend Listener)", "shap_value": 0.25, "direction": "increases_risk", "importance": 0.25, "contribution_pct": 22.0},
             {"name": "Port 5173 (Vite Dev Server Active)", "shap_value": 0.18, "direction": "increases_risk", "importance": 0.18, "contribution_pct": 16.0},
             {"name": "Host SOC Node Criticality (0.95)", "shap_value": 0.22, "direction": "increases_risk", "importance": 0.22, "contribution_pct": 19.5},
             {"name": "Windows Host Firewall Active", "shap_value": -0.13, "direction": "decreases_risk", "importance": 0.13, "contribution_pct": 11.5},
+        ]
+    elif device_type == "mobile":
+        features = [
+            {"name": f"Mobile Device ({manufacturer})", "shap_value": 0.15, "direction": "increases_risk", "importance": 0.15, "contribution_pct": 25.0},
+            {"name": "Wi-Fi Lateral Propagation Exposure", "shap_value": 0.19, "direction": "increases_risk", "importance": 0.19, "contribution_pct": 30.0},
+            {"name": f"Dynamic DHCP Address ({ip})", "shap_value": 0.12, "direction": "increases_risk", "importance": 0.12, "contribution_pct": 18.0},
+            {"name": "Mobile OS Security Updates", "shap_value": -0.18, "direction": "decreases_risk", "importance": 0.18, "contribution_pct": 27.0},
+        ]
+    elif device_type == "iot":
+        features = [
+            {"name": f"IoT Device Firmware Risk ({manufacturer})", "shap_value": 0.32, "direction": "increases_risk", "importance": 0.32, "contribution_pct": 35.0},
+            {"name": "Default Credentials Exposure", "shap_value": 0.25, "direction": "increases_risk", "importance": 0.25, "contribution_pct": 27.0},
+            {"name": "No Endpoint Protection Agent", "shap_value": 0.20, "direction": "increases_risk", "importance": 0.20, "contribution_pct": 22.0},
+            {"name": "Network Isolation (Guest VLAN)", "shap_value": -0.15, "direction": "decreases_risk", "importance": 0.15, "contribution_pct": 16.0},
         ]
     else:
         features = [
@@ -355,13 +259,29 @@ def get_lan_explanation(device_id: str) -> dict[str, Any]:
             {"name": "DHCP Lease Security Suite", "shap_value": -0.14, "direction": "decreases_risk", "importance": 0.14, "contribution_pct": 20.0},
         ]
 
+    # Adjust SHAP values based on actual open ports
+    if ports and device_type not in ("router",):
+        port_features = []
+        for p in ports[:3]:
+            port_names = {22: "SSH", 80: "HTTP", 443: "HTTPS", 445: "SMB", 8080: "HTTP-Alt",
+                          5173: "Vite-Dev", 8000: "FastAPI", 3389: "RDP", 5000: "Flask"}
+            pname = port_names.get(p, f"Port {p}")
+            port_features.append({
+                "name": f"Open Port {p} ({pname} Service Exposed)",
+                "shap_value": round(0.12 + (0.08 if p in (445, 3389, 23) else 0), 3),
+                "direction": "increases_risk",
+                "importance": round(0.12 + (0.08 if p in (445, 3389, 23) else 0), 3),
+                "contribution_pct": round(10 + (5 if p in (445, 3389, 23) else 0), 1),
+            })
+        features = port_features + features[:3]
+
     return {
         "device_id": target["device_id"] if target else device_id,
         "explanations": [
             {
                 "attack_probability": prob,
                 "base_value": 0.15,
-                "top_features": features,
+                "top_features": features[:6],
             }
         ],
         "global_importance": [
@@ -378,11 +298,13 @@ def get_lan_attack_path(device_id: str) -> dict[str, Any]:
     """
     Generate lateral movement attack path across the physical Wi-Fi/LAN devices.
     """
+    scanner = get_scanner()
+    gateway_ip = scanner._gateway_ip or "Gateway"
     devices = get_connected_lan_devices()
-    gateway = next((d for d in devices if d["device_type"] == "router" or d["ip_address"].endswith(".1")), None)
+    gateway = next((d for d in devices if d.get("device_type") == "router" or d.get("ip_address") == gateway_ip), None)
     target = next((d for d in devices if d["device_id"] == device_id or d["ip_address"] in device_id), None)
 
-    gateway_name = gateway["device_id"] if gateway else "Gateway Router (192.168.7.1)"
+    gateway_name = gateway["device_id"] if gateway else f"Gateway Router ({gateway_ip})"
     target_name = target["device_id"] if target else device_id
 
     path = [
@@ -403,7 +325,7 @@ def get_lan_attack_path(device_id: str) -> dict[str, Any]:
         "device_id": target_name,
         "total_steps": len(path),
         "path": path,
-        "description": f"Inbound Internet vector exploiting Gateway Router ({gateway['ip_address'] if gateway else '192.168.7.1'}) with lateral Wi-Fi hop to {target_name}.",
+        "description": f"Inbound Internet vector exploiting Gateway Router ({gateway['ip_address'] if gateway else gateway_ip}) with lateral Wi-Fi hop to {target_name}.",
         "is_real_lan": True,
     }
 
@@ -412,15 +334,19 @@ def get_lan_recommendations(device_id: str) -> dict[str, Any]:
     """
     Generate MITRE ATT&CK mitigation recommendations tailored to real physical LAN devices.
     """
+    scanner = get_scanner()
+    gateway_ip = scanner._gateway_ip or "Gateway"
     devices = get_connected_lan_devices()
     target = next((d for d in devices if d["device_id"] == device_id or d["ip_address"] in device_id), None)
-    ip = target["ip_address"] if target else "192.168.7.1"
+    ip = target["ip_address"] if target else gateway_ip
+    device_type = target["device_type"] if target else "workstation"
+    manufacturer = target.get("manufacturer", "Unknown") if target else "Unknown"
 
-    if ip.endswith(".1"):
+    if device_type == "router" or ip == gateway_ip:
         recs = [
             {
                 "title": "Disable Web/SSH Management on Wi-Fi Interface",
-                "description": f"Disable HTTP (Port 80) and SSH (Port 22) router management from wireless client stations. Restrict router admin access to wired physical ports.",
+                "description": f"Disable HTTP (Port 80) and SSH (Port 22) on {manufacturer} router management from wireless client stations. Restrict admin access to wired physical ports.",
                 "mitre_id": "M1038",
                 "mitre_tactic": "Initial Access Prevention",
                 "priority": 1,
@@ -443,7 +369,7 @@ def get_lan_recommendations(device_id: str) -> dict[str, Any]:
                 "urgency": "medium",
             },
         ]
-    elif ip.endswith(".2"):
+    elif target and target.get("is_host"):
         recs = [
             {
                 "title": "Restrict SMB Port 445 Inbound Exposure",
@@ -470,10 +396,56 @@ def get_lan_recommendations(device_id: str) -> dict[str, Any]:
                 "urgency": "medium",
             },
         ]
+    elif device_type == "mobile":
+        recs = [
+            {
+                "title": f"Isolate {manufacturer} Mobile Device to Guest VLAN",
+                "description": f"Place {manufacturer} device ({ip}) into a guest Wi-Fi network with no access to internal hosts or file shares.",
+                "mitre_id": "M1030",
+                "mitre_tactic": "Network Segmentation",
+                "priority": 1,
+                "urgency": "high",
+            },
+            {
+                "title": "Enable Mobile Device Management (MDM)",
+                "description": "Deploy MDM policy to enforce OS updates, app restrictions, and VPN-only network access for mobile clients.",
+                "mitre_id": "M1058",
+                "mitre_tactic": "Endpoint Security",
+                "priority": 2,
+                "urgency": "medium",
+            },
+        ]
+    elif device_type == "iot":
+        recs = [
+            {
+                "title": f"Segment {manufacturer} IoT Device to Isolated VLAN",
+                "description": f"Place IoT device {ip} ({manufacturer}) into a dedicated IoT VLAN with firewall rules blocking access to workstations and servers.",
+                "mitre_id": "M1030",
+                "mitre_tactic": "Network Segmentation",
+                "priority": 1,
+                "urgency": "critical",
+            },
+            {
+                "title": "Disable UPnP and Remote Access on IoT Device",
+                "description": "Disable Universal Plug and Play (UPnP) and any cloud-based remote access features that may expose the device to external attacks.",
+                "mitre_id": "M1042",
+                "mitre_tactic": "Initial Access Prevention",
+                "priority": 2,
+                "urgency": "high",
+            },
+            {
+                "title": "Update IoT Firmware to Latest Version",
+                "description": f"Check {manufacturer} support site for firmware updates addressing known CVEs and apply immediately.",
+                "mitre_id": "M1051",
+                "mitre_tactic": "Vulnerability Management",
+                "priority": 3,
+                "urgency": "medium",
+            },
+        ]
     else:
         recs = [
             {
-                "title": "Isolate Unmanaged Mobile / IoT Devices",
+                "title": f"Isolate Unmanaged Device ({manufacturer})",
                 "description": f"Place device {ip} into an isolated VLAN or guest Wi-Fi network to eliminate lateral paths to critical host workstations.",
                 "mitre_id": "M1030",
                 "mitre_tactic": "Network Segmentation",

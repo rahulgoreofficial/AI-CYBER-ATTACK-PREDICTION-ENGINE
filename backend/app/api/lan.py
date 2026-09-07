@@ -7,6 +7,7 @@ Returns live discovered connected devices on the local network (Wi-Fi / Ethernet
 
 from fastapi import APIRouter
 from backend.app.services.lan_service import get_connected_lan_devices, get_host_network_info
+from backend.app.services.scanner import get_scanner
 
 router = APIRouter(prefix="/api/network", tags=["Network LAN"])
 
@@ -20,8 +21,20 @@ async def get_lan_devices():
     """
     host_info = get_host_network_info()
     devices = get_connected_lan_devices()
+    scanner = get_scanner()
+    status = scanner.get_status()
     return {
         "host": host_info,
         "total_discovered": len(devices),
         "devices": devices,
+        "scanner": status,
     }
+
+
+@router.get("/lan-devices/stream-status")
+async def get_stream_status():
+    """
+    Get the current status of the background network scanner.
+    """
+    scanner = get_scanner()
+    return scanner.get_status()

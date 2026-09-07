@@ -1,12 +1,14 @@
 /**
- * API Service — Centralized HTTP client for the FastAPI backend.
+ * API Service — Centralized HTTP client & WebSocket manager for the FastAPI backend.
  * Base URL defaults to http://localhost:8000.
+ * WebSocket URL defaults to ws://localhost:8000/ws/network.
  */
 import axios from 'axios';
 
 const isBrowser = typeof window !== 'undefined';
 const host = isBrowser && window.location.hostname ? window.location.hostname : 'localhost';
 const API_BASE = `http://${host}:8000`;
+const WS_BASE = `ws://${host}:8000`;
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -114,5 +116,108 @@ export async function fetchHealth() {
   const { data } = await api.get('/health');
   return data;
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WEBSOCKET MANAGER — Real-time Network Event Stream
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Creates a persistent WebSocket connection to the backend network scanner.
+ * Auto-reconnects on disconnect with exponential backoff.
+ *
+ * @param {function} onMessage - Callback when a network event is received.
+ *        Receives parsed JSON: { type, device, total_devices, all_devices, timestamp, scan_cycle }
+ * @param {function} onStatusChange - Callback for connection status changes.
+ *        Receives status string: 'connecting', 'connected', 'disconnected', 'error'
+ * @returns {{ close: function, send: function, getStatus: function }}
+ */
+export function createNetworkWebSocket(onMessage, onStatusChange) {
+  let ws = null;
+  let reconnectTimer = null;
+  let reconnectDelay = 1000; // Start at 1s, exponential backoff
+  const MAX_RECONNECT_DELAY = 15000;
+  let intentionallyClosed = false;
+  let status = 'disconnected';
+
+  function updateStatus(newStatus) {
+    status = newStatus;
+    if (onStatusChange) onStatusChange(newStatus);
+  }
+
+  function connect() {
+    if (intentionallyClosed) return;
+
+    try {
+      updateStatus('connecting');
+      ws = new WebSocket(`${WS_BASE}/ws/network`);
+
+      ws.onopen = () => {
+        reconnectDelay = 1000; // Reset backoff on success
+        updateStatus('connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type !== 'ack' && onMessage) {
+            onMessage(data);
+          }
+        } catch (err) {
+          console.warn('Failed to parse WebSocket message:', err);
+        }
+      };
+
+      ws.onclose = (event) => {
+        updateStatus('disconnected');
+        if (!intentionallyClosed) {
+          // Auto-reconnect with exponential backoff
+          reconnectTimer = setTimeout(() => {
+            reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT_DELAY);
+            connect();
+          }, reconnectDelay);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.debug('WebSocket error:', error);
+        updateStatus('error');
+      };
+    } catch (err) {
+      console.warn('WebSocket connection failed:', err);
+      updateStatus('error');
+      if (!intentionallyClosed) {
+        reconnectTimer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT_DELAY);
+          connect();
+        }, reconnectDelay);
+      }
+    }
+  }
+
+  // Start connection
+  connect();
+
+  return {
+    close() {
+      intentionallyClosed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+      updateStatus('disconnected');
+    },
+    send(message) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(typeof message === 'string' ? message : JSON.stringify(message));
+      }
+    },
+    getStatus() {
+      return status;
+    },
+  };
+}
+
 
 export default api;

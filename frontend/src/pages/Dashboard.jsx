@@ -9,6 +9,7 @@ import {
   fetchAttackPath,
   triggerAnalysis,
   fetchLanDevices,
+  createNetworkWebSocket,
 } from '../services/api';
 
 import NetworkGraph from '../components/NetworkGraph';
@@ -22,7 +23,7 @@ import AttackPath from '../components/AttackPath';
 /**
  * Dashboard — Real-time Live SOC Cybersecurity Dashboard.
  * Displays real physical network devices (Wi-Fi/LAN) with live multi-model execution,
- * real-time telemetry streaming, dynamic risk engine, and instant network toggling.
+ * real-time WebSocket streaming, dynamic risk engine, and instant network toggling.
  */
 export default function Dashboard({
   selectedDevice,
@@ -53,6 +54,13 @@ export default function Dashboard({
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [streamCycles, setStreamCycles] = useState(1);
 
+  // WebSocket connection status
+  const [wsStatus, setWsStatus] = useState('disconnected');
+  const wsRef = useRef(null);
+
+  // Device change notifications (toast queue)
+  const [notifications, setNotifications] = useState([]);
+
   // Dynamic Risk Engine Weights
   const [showRiskTuner, setShowRiskTuner] = useState(false);
   const [riskWeights, setRiskWeights] = useState({
@@ -81,6 +89,19 @@ export default function Dashboard({
     selectedDeviceRef.current = selectedDevice;
   }, [selectedDevice]);
 
+  // Track previous device count for change detection
+  const prevDeviceCountRef = useRef(0);
+
+  // Helper to add a notification toast
+  const addNotification = useCallback((type, message) => {
+    const id = Date.now() + Math.random();
+    setNotifications((prev) => [...prev.slice(-4), { id, type, message, time: new Date().toLocaleTimeString() }]);
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 8000);
+  }, []);
+
   // Helper to sync network graph node colors with active risk scores
   const syncNetworkWithRisk = (netData, riskScores) => {
     if (!netData?.nodes || !riskScores) return netData;
@@ -103,6 +124,133 @@ export default function Dashboard({
     return { ...netData, nodes: updatedNodes };
   };
 
+  // ── WebSocket: Real-time Device Events ─────────────────────────────────
+  useEffect(() => {
+    if (networkSource !== 'lan') {
+      // Only use WebSocket for real LAN mode
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      return;
+    }
+
+    const wsConn = createNetworkWebSocket(
+      // onMessage: handle real-time network events
+      (event) => {
+        if (event.type === 'full_scan' && event.all_devices) {
+          const devices = event.all_devices;
+          const onlineDevices = devices.filter((d) => d.status !== 'offline');
+          const prevCount = prevDeviceCountRef.current;
+
+          // Build network topology from WebSocket data
+          const nodes = [];
+          const edges = [];
+          let gatewayId = null;
+
+          for (const d of onlineDevices) {
+            if (d.device_type === 'router' || (event.gateway && d.ip_address === event.gateway) || (!gatewayId && d.ip_address?.endsWith('.1'))) {
+              gatewayId = d.device_id;
+              break;
+            }
+          }
+          if (!gatewayId && onlineDevices.length > 0) {
+            gatewayId = onlineDevices[0].device_id;
+          }
+
+          for (const d of onlineDevices) {
+            nodes.push({
+              id: d.device_id,
+              name: d.role,
+              label: d.label,
+              type: d.device_type,
+              department: d.department,
+              vlan: 'VLAN-WIFI-LAN',
+              os: d.is_host ? 'Windows / Embedded Linux' : 'Network OS / Android / iOS',
+              criticality: d.criticality,
+              vulnerability: d.vulnerability,
+              open_ports: d.open_ports || [],
+              description: d.description || '',
+              ip_address: d.ip_address,
+              mac_address: d.mac_address,
+              manufacturer: d.manufacturer || 'Unknown',
+              hostname: d.hostname || '',
+              risk_score: d.dynamic_risk_score,
+              risk_level: d.risk_level,
+              attack_probability: d.attack_probability,
+              status: d.status || 'online',
+              first_seen: d.first_seen || '',
+              last_seen: d.last_seen || '',
+            });
+
+            if (d.device_id !== gatewayId && gatewayId) {
+              edges.push({
+                source: gatewayId,
+                target: d.device_id,
+                connection_type: d.is_host ? 'ethernet' : 'wifi',
+                bandwidth: d.is_host ? '1.2 Gbps (Wi-Fi 6)' : '433 Mbps (802.11ac)',
+              });
+            }
+          }
+
+          const netData = {
+            nodes,
+            edges,
+            total_nodes: nodes.length,
+            total_edges: edges.length,
+            is_real_lan: true,
+          };
+
+          setNetworkData(netData);
+          setLastSyncTime(new Date().toLocaleTimeString());
+          setStreamCycles(event.scan_cycle || ((c) => c + 1));
+
+          onDataLoaded?.({ deviceCount: nodes.length });
+
+          // Detect count changes and notify
+          if (prevCount > 0 && nodes.length > prevCount) {
+            addNotification('connect', `🟢 ${nodes.length - prevCount} new device(s) connected to network`);
+            // Immediately refresh risk scores and predictions
+            fetchRisk(null, networkSource).then((r) => setRiskData(r)).catch(() => {});
+            fetchPredictions(null, topK, selectedModel, networkSource).then((p) => setPredictions(p)).catch(() => {});
+          } else if (prevCount > 0 && nodes.length < prevCount) {
+            addNotification('disconnect', `🔴 ${prevCount - nodes.length} device(s) disconnected from network`);
+            fetchRisk(null, networkSource).then((r) => setRiskData(r)).catch(() => {});
+            fetchPredictions(null, topK, selectedModel, networkSource).then((p) => setPredictions(p)).catch(() => {});
+          }
+          prevDeviceCountRef.current = nodes.length;
+        }
+
+        if (event.type === 'connect' && event.device?.device_id) {
+          addNotification('connect', `🟢 Connected: ${event.device.device_id}`);
+          fetchRisk(null, networkSource).then((r) => setRiskData(r)).catch(() => {});
+          fetchPredictions(null, topK, selectedModel, networkSource).then((p) => setPredictions(p)).catch(() => {});
+        }
+        if (event.type === 'disconnect' && event.device?.device_id) {
+          addNotification('disconnect', `🔴 Disconnected: ${event.device.device_id}`);
+          fetchRisk(null, networkSource).then((r) => setRiskData(r)).catch(() => {});
+          fetchPredictions(null, topK, selectedModel, networkSource).then((p) => setPredictions(p)).catch(() => {});
+        }
+        if (event.type === 'network_switch') {
+          addNotification('connect', `🌐 Network Switch: Connected to subnet ${event.subnet || 'new network'}`);
+          fetchRisk(null, networkSource).then((r) => setRiskData(r)).catch(() => {});
+          fetchPredictions(null, topK, selectedModel, networkSource).then((p) => setPredictions(p)).catch(() => {});
+        }
+      },
+      // onStatusChange
+      (status) => {
+        setWsStatus(status);
+      }
+    );
+
+    wsRef.current = wsConn;
+
+    return () => {
+      wsConn.close();
+      wsRef.current = null;
+    };
+  }, [networkSource, selectedModel, topK, addNotification, onDataLoaded]);
+
   // ── 1. Initial Load: Real-Time Stream Initialization ───────────────────
   useEffect(() => {
     const initLiveStream = async () => {
@@ -121,6 +269,8 @@ export default function Dashboard({
         setPredictions(predResp);
         setEvaluation(evalData);
         setLastSyncTime(new Date().toLocaleTimeString());
+
+        prevDeviceCountRef.current = netData?.total_nodes || 0;
 
         // Auto-select #1 predicted target if none is selected
         if (!selectedDeviceRef.current && predResp?.predictions?.length > 0) {
@@ -149,7 +299,7 @@ export default function Dashboard({
     initLiveStream();
   }, [networkSource, selectedModel, topK]);
 
-  // ── 2. Live Telemetry Polling (Auto-Streaming) ──────────────────────────
+  // ── 2. Live Telemetry Polling (Risk & Predictions only — network comes via WebSocket) ──
   useEffect(() => {
     if (!autoStream) return;
 
@@ -276,6 +426,54 @@ export default function Dashboard({
   const topTarget = predictions?.predictions?.[0];
   const isHighThreat = topTarget && topTarget.attack_probability >= 0.5;
 
+  // WebSocket status indicator color
+  const wsStatusColor = wsStatus === 'connected' ? '#22c55e' :
+    wsStatus === 'connecting' ? '#f59e0b' : '#ef4444';
+
+  // ── RENDER: Notification Toasts ──────────────────────────────────────────
+  const renderNotifications = () => (
+    <div
+      style={{
+        position: 'fixed',
+        top: '70px',
+        right: '20px',
+        zIndex: 10000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        maxWidth: '400px',
+      }}
+    >
+      {notifications.map((n) => (
+        <div
+          key={n.id}
+          className="animate-fade-in"
+          style={{
+            padding: '10px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: n.type === 'connect'
+              ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))'
+              : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05))',
+            border: `1px solid ${n.type === 'connect' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          }}
+        >
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+            {n.message}
+          </span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            {n.time}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
   // ── RENDER: Real-Time Live SOC Control Bar ──────────────────────────────
   const renderLiveControlBar = () => (
     <div
@@ -296,15 +494,15 @@ export default function Dashboard({
         {/* Left Side: Live Stream Status & Mode Selectors */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
           
-          {/* Pulsing Live Badge */}
+          {/* Pulsing Live Badge with WebSocket Status */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               padding: '3px 10px',
-              background: 'rgba(34, 197, 94, 0.12)',
-              border: '1px solid rgba(34, 197, 94, 0.4)',
+              background: wsStatus === 'connected' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+              border: `1px solid ${wsStatus === 'connected' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
               borderRadius: 'var(--radius-sm)',
             }}
           >
@@ -313,14 +511,14 @@ export default function Dashboard({
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: '#22c55e',
-                boxShadow: '0 0 10px #22c55e',
+                background: wsStatusColor,
+                boxShadow: `0 0 10px ${wsStatusColor}`,
                 display: 'inline-block',
-                animation: 'pulse 1.8s infinite',
+                animation: wsStatus === 'connected' ? 'pulse 1.8s infinite' : 'none',
               }}
             />
-            <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.08em' }}>
-              LIVE SOC STREAM
+            <span style={{ color: wsStatusColor, fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.08em' }}>
+              {wsStatus === 'connected' ? 'LIVE SOC STREAM' : wsStatus === 'connecting' ? 'CONNECTING...' : 'OFFLINE'}
             </span>
           </div>
 
@@ -341,7 +539,7 @@ export default function Dashboard({
               }}
               title="Graph displays real connected devices on this Wi-Fi / Local Network"
             >
-              📡 Real Wi-Fi / LAN Devices ({networkSource === 'lan' ? (networkData?.total_nodes || 5) : 'Active'})
+              📡 Real Wi-Fi / LAN Devices ({networkSource === 'lan' ? (networkData?.total_nodes || '...') : 'Active'})
             </button>
 
             <button
@@ -555,7 +753,7 @@ export default function Dashboard({
           {networkSource === 'lan' ? '● Real Wi-Fi Network Mode' : '● Enterprise Simulation Mode'}
         </span>
         <span>
-          Endpoints: <span className="font-mono" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{networkData?.total_nodes ?? 5} Active</span>
+          Endpoints: <span className="font-mono" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{networkData?.total_nodes ?? '...'} Active</span>
         </span>
         <span>
           Top Risk Target: <span className="font-mono" style={{ color: isHighThreat ? 'var(--accent-red)' : 'var(--accent-pink)', fontWeight: 600 }}>
@@ -566,7 +764,10 @@ export default function Dashboard({
           Latency: <span className="font-mono" style={{ color: '#22c55e' }}>{scanResult?.inference_ms != null ? `${scanResult.inference_ms} ms` : '~8 ms'}</span>
         </span>
         <span>
-          Sync Cycle: <span className="font-mono">#{streamCycles}</span>
+          Scan Cycle: <span className="font-mono">#{typeof streamCycles === 'number' ? streamCycles : '...'}</span>
+        </span>
+        <span>
+          WS: <span className="font-mono" style={{ color: wsStatusColor }}>{wsStatus}</span>
         </span>
         <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)' }}>
           Last Synced: <span className="font-mono" style={{ color: 'var(--accent-pink)' }}>{lastSyncTime}</span>
@@ -580,6 +781,7 @@ export default function Dashboard({
   if (activeSection === 'network') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', height: '100%' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <div style={{ flex: 1, minHeight: '620px' }}>
           <NetworkGraph
@@ -596,6 +798,7 @@ export default function Dashboard({
   if (activeSection === 'risk') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <RiskTable
           riskData={riskData}
@@ -609,6 +812,7 @@ export default function Dashboard({
   if (activeSection === 'models') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <MetricsPanel evaluation={evaluation} />
       </div>
@@ -618,6 +822,7 @@ export default function Dashboard({
   if (activeSection === 'explanation') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
           <PredictionPanel
@@ -637,6 +842,7 @@ export default function Dashboard({
   if (activeSection === 'attack-path') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', height: '100%' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 'var(--space-lg)', flex: 1 }}>
           <div style={{ minHeight: '550px' }}>
@@ -660,6 +866,7 @@ export default function Dashboard({
   if (activeSection === 'recommendations') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        {renderNotifications()}
         {renderLiveControlBar()}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
           <RiskTable
@@ -679,6 +886,9 @@ export default function Dashboard({
   // ── Default Dashboard View (Full Operations Grid) ───────────────────────
   return (
     <div className="dashboard">
+      {/* Notification Toasts */}
+      {renderNotifications()}
+
       {/* Row 1 — Live SOC Control Bar */}
       <div className="dashboard__timeline">
         {renderLiveControlBar()}
@@ -795,7 +1005,7 @@ export default function Dashboard({
           <div
             className="cyber-card animate-fade-in"
             style={{
-              maxWidth: '850px',
+              maxWidth: '950px',
               width: '100%',
               maxHeight: '85vh',
               overflowY: 'auto',
@@ -854,6 +1064,12 @@ export default function Dashboard({
                         http://{lanData.host.host_ip}:5173
                       </div>
                     </div>
+                    <div>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Scanner:</span>
+                      <div className="font-mono" style={{ fontSize: '0.85rem', color: '#22c55e' }}>
+                        {lanData.scanner?.scan_count || 0} scans · {lanData.scanner?.last_scan_duration_s || '?'}s/cycle
+                      </div>
+                    </div>
                     <span className="risk-badge risk-badge--low">Subnet Active</span>
                   </div>
                 )}
@@ -864,20 +1080,34 @@ export default function Dashboard({
                       <th>Device ID</th>
                       <th>IP Address</th>
                       <th>MAC Address</th>
+                      <th>Manufacturer</th>
                       <th>Role / Inferred Type</th>
+                      <th>Status</th>
                       <th>Criticality</th>
                       <th>Dynamic Risk</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lanData?.devices?.map((d) => (
-                      <tr key={d.device_id}>
-                        <td className="font-mono" style={{ fontWeight: 600, color: d.is_host ? 'var(--accent-pink)' : 'var(--text-primary)' }}>
-                          {d.device_id}
+                      <tr key={d.device_id} style={{
+                        opacity: d.status === 'offline' ? 0.45 : 1,
+                      }}>
+                        <td className="font-mono" style={{ fontWeight: 600, color: d.is_host ? 'var(--accent-pink)' : d.status === 'new' ? '#22c55e' : 'var(--text-primary)' }}>
+                          {d.status === 'new' && '🆕 '}{d.device_id}
                         </td>
                         <td className="font-mono" style={{ color: 'var(--accent-magenta)' }}>{d.ip_address}</td>
                         <td className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{d.mac_address}</td>
+                        <td style={{ color: 'var(--accent-cyan)', fontSize: '0.75rem' }}>{d.manufacturer || 'Unknown'}</td>
                         <td>{d.role}</td>
+                        <td>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            color: d.status === 'online' ? '#22c55e' : d.status === 'new' ? '#3b82f6' : '#ef4444',
+                          }}>
+                            {d.status === 'new' ? '● NEW' : d.status === 'online' ? '● Online' : '○ Offline'}
+                          </span>
+                        </td>
                         <td className="font-mono">{(d.criticality * 100).toFixed(0)}%</td>
                         <td>
                           <span className={`risk-badge risk-badge--${d.risk_level}`}>
