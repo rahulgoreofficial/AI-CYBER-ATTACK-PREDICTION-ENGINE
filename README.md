@@ -118,17 +118,22 @@ Evaluated on the benchmark dataset across 15 attack progression windows:
 ## ⚡ Real-Time Network Discovery & WebSocket Streaming
 
 ### 1. Hardware-Aware Layer-2 Scanning
+
 Traditional tools rely on passive OS ARP caches or sequential ICMP pings. Because mobile devices (Android/iOS) and Windows firewalls frequently drop ICMP echo requests, active endpoints often remain invisible.
+
 - **Win32 `SendARP` Execution**: The engine uses `ctypes.windll.iphlpapi.SendARP` in parallel worker pools to query all 254 subnet addresses at Layer 2 in ~4 seconds.
 - **ICMP Firewall Bypass**: Devices connected to Wi-Fi/Ethernet *must* respond to Layer-2 ARP in order to maintain an IP link, guaranteeing discovery of silent smartphones, smart TVs, and IoT hardware.
 
 ### 2. Zero Hardcoding Architecture
+
 - **Dynamic Gateway Discovery**: Detects the true default gateway router IP via OS routing table introspection (`route print 0.0.0.0`), whether on home Wi-Fi (`192.168.31.1`), corporate subnets (`10.x.x.x`), or mobile hotspots (`172.20.10.1`).
 - **Dynamic BIOS Manufacturer Query**: Queries the true hardware motherboard manufacturer (`HARDWARE\DESCRIPTION\System\BIOS\SystemManufacturer`), automatically reflecting Asus, Dell, Lenovo, HP, or Apple hardware.
 - **Network Switch Detection**: Automatically senses subnet transitions when moving between networks, clears stale registries, and broadcasts instant alerts.
 
 ### 3. Full-Duplex WebSocket Protocol (`/ws/network`)
+
 Clients connect via WebSocket to receive real-time JSON payloads:
+
 ```json
 {
   "type": "connect",
@@ -157,6 +162,7 @@ The engine calculates risk dynamically rather than relying on static CVSS scores
 $$\text{Risk Score} = \left( w_{\text{prob}} \cdot P_{\text{attack}} \right) + \left( w_{\text{crit}} \cdot C_{\text{asset}} \right) + \left( w_{\text{vuln}} \cdot V_{\text{vuln}} \right) + \left( w_{\text{expo}} \cdot E_{\text{topo}} \right) + \left( w_{\text{anom}} \cdot A_{\text{anom}} \right)$$
 
 Default Calibration:
+
 - **Predicted Attack Probability ($w_{\text{prob}} = 0.40$)**: Multi-model inference likelihood.
 - **Asset Criticality ($w_{\text{crit}} = 0.35$)**: Host machines (0.95), Gateway Routers (0.90), Servers (0.80), IoT (0.50), Mobile (0.40).
 - **Vulnerability Exposure ($w_{\text{vuln}} = 0.15$)**: Base vulnerability boosted by dangerous open ports (445, 3389, 22, 23).
@@ -186,7 +192,9 @@ Attack Probability: 32.5% (Base value: 15.0%)
 ```
 
 ### MITRE ATT&CK Defensive Playbooks
+
 Automatically prescribes prioritized remediation actions:
+
 - **M1038 (Execution Prevention)**: Disable HTTP/SSH admin interfaces on wireless client stations.
 - **M1030 (Network Segmentation)**: Enforce Access Point Client Isolation to prevent lateral peer-to-peer scanning.
 - **M1041 (Encryption Enforcement)**: Enforce WPA3-Personal with 802.11w Protected Management Frames.
@@ -234,17 +242,20 @@ Interactive Swagger UI documentation is available at `http://localhost:8000/docs
 ## 🚀 Quick Start & Installation
 
 ### Prerequisites
+
 - **Python 3.10+**
 - **Node.js 18+** and **npm**
 - Windows OS recommended for native Win32 `SendARP` Layer-2 scanning (Linux/macOS fallback included)
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/rahulgoreofficial/AI-CYBER-ATTACK-PREDICTION-ENGINE.git
 cd AI-CYBER-ATTACK-PREDICTION-ENGINE
 ```
 
 ### 2. Backend Setup
+
 ```bash
 # Create and activate Python virtual environment
 python -m venv venv
@@ -257,10 +268,12 @@ pip install -r requirements.txt
 # Start the FastAPI backend server
 python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
 The API is now live at [http://localhost:8000](http://localhost:8000).  
 Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ### 3. Frontend Setup
+
 ```bash
 # In a new terminal, navigate to frontend
 cd frontend
@@ -271,11 +284,14 @@ npm install
 # Start the Vite development server
 npm run dev
 ```
+
 Open [http://localhost:5173](http://localhost:5173) in your browser.  
 *(To access from any mobile phone on the same Wi-Fi, open `http://<your-host-ip>:5173`)*.
 
 ### 4. Cloud / Hugging Face Space Deployment
+
 The project includes a standalone deployment configuration under `hf_space/`:
+
 ```bash
 cd hf_space
 pip install -r requirements.txt
@@ -321,9 +337,9 @@ ai-cyber-attack-prediction-engine/
 
 ## 🔬 Academic & Research Context
 
-This project was developed at the **Vellore Institute of Technology (VIT)** as an engineering design and innovation research project. 
+This project was developed at the **Vishwakarma Institute of Technology (VIT)** as an engineering design and innovation research project.
 
-- **Primary Benchmark Datasets**: 
+- **Primary Benchmark Datasets**:
   - [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html) (Canadian Institute for Cybersecurity)
   - [CSE-CIC-IDS2018](https://www.unb.ca/cic/datasets/ids-2018.html) (AWS Attack Simulation)
 - **Problem Statement**: Traditional Intrusion Detection Systems (IDS) trigger thousands of disconnected alerts daily without contextualizing topological progression. This research models cybersecurity defense as a **dynamic graph prediction challenge**, identifying the most probable subsequent attack hops before lateral exploitation occurs.
